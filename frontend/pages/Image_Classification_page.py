@@ -20,6 +20,7 @@ from utils.image_classification_random_shuffle import image_classification_rando
 # imagesフォルダ内の画像とcsvファイルに書かれている画像のファイル名が一致することを確認してからランダムシャッフルする
 
 def on_download_click(parent_directory,run_id):
+    """学習完了後の後処理"""
     delete_path=os.path.join(parent_directory,run_id)
     shutil.rmtree(delete_path)
     st.session_state.view=False
@@ -28,9 +29,7 @@ def on_download_click(parent_directory,run_id):
 def split_file(paired_files, test_size):
     split_index=int(len(paired_files)*test_size)
     train_pairs=paired_files[:split_index]
-    # st.write(f"train_pairs=paired_files[:split_index]:{train_pairs}")
     val_pairs=paired_files[split_index:]
-    # st.write(f"val_pairs=paired_files[split_index:]:{val_pairs}")
     
     return train_pairs, val_pairs
 
@@ -65,6 +64,7 @@ def random_shuffle(train_dir_path, val_dir_path, upload_dir, train_ratio):
 
 
 def para_change():
+    """パラメータ初期化"""
     st.session_state['selection_device'] = "GPU"
     st.session_state['device'] = "0"
     st.session_state['degrees'] = 0.0
@@ -90,7 +90,10 @@ def para_change():
 
 
 def image_classification():
+    """画像分類：学習ページ"""
 
+    # 共有フォルダ
+    parent_directory = "shared/train/"
     st.title("【学習】画像分類")
 
     if'zip_data' not in st.session_state:
@@ -101,34 +104,13 @@ def image_classification():
         st.session_state.view=True
     if'run_id' not in st.session_state:
         st.session_state.run_id=None
-    # 任意の場所(親ディレクトリ)を指定
-    parent_directory = "shared/train/"
-    # 現在の日付と時刻を取得
-    # current_datetime = datetime.now()
-    # # ディレクトリ名に使用するフォーマット(yyyyMMddhhmmss)
-    # directory_name_format = "%Y%m%d_%H%M%S"
-    # run_id=f"{current_datetime.strftime(directory_name_format)}"
-    # # 画像分類ディレクトリの作成
-    # class_directory_name = f"{current_datetime.strftime(directory_name_format)}/pre_data"
-    # class_dir_path=os.path.join(parent_directory, class_directory_name)
-    # # os.makedirs(class_dir_path, exist_ok=True)
-    # # 作成したいディレクトリのパスを作成
-    # train_directory_name = f"train"
-    # val_directory_name = f"val"
-    # yaml_directory_name = f"{current_datetime.strftime(directory_name_format)}/pre_data"
-    # # 完全なディレクトリパスを作成
-    # train_dir_path = os.path.join(class_dir_path, train_directory_name)
-    # val_dir_path = os.path.join(class_dir_path, val_directory_name)
-    # yaml_dir_path = os.path.join(parent_directory, yaml_directory_name)
 
-    # os.makedirs(train_dir_path, exist_ok=True)
-    # os.makedirs(val_dir_path, exist_ok=True)
-    
-
-    # 画像をアップロードする
-    # 注釈を挿入
+    ###########################
+    # データセットのアップロード
+    ###########################
     img_options = ["LabelStadioFormat", "YOLO Format"]
     img_toggle = st.pills("推論するものをアップロードしてください。", img_options, selection_mode="single")
+    
     if img_toggle == "LabelStadioFormat":
         st.markdown("###### import zipfile(zipファイルをアップロードしてください)")
         multi_img = '''*注：日本語を含むファイルはアップロードしないでください。
@@ -146,6 +128,7 @@ def image_classification():
         st.markdown(multi_csv)
         csv_path = st.file_uploader('import csv(アノテーションラベルをアップロードしてください)', type=['csv'], label_visibility="hidden", key="csv_file")
         st.write("\n\n\n\n\n")
+    
     elif img_toggle == "YOLO Format":
         st.markdown("###### 画像をアップロードしてください")
         multi_img = '''*注：日本語を含むファイルはアップロードしないでください。
@@ -156,40 +139,53 @@ def image_classification():
         st.write("\n\n\n\n")
 
 
-
-
-    # モデルをアップロードする
-    # "１から学習"であればyoloのデフォルトモデルから選択する
-    # "再学習"であればユーザーがモデルを選択する
+    ###########################
+    # 学習方法の選択
+    ###########################
     model_options = ["再学習", "１から学習"]
-    selection_model = st.pills("学習方法選択", model_options, selection_mode="single")
-    # デフォルトモデルを使用
+    selection_model = st.pills("学習方法選択", model_options, index=0, selection_mode="single")
+
+    # 再学習の場合
     if selection_model == "再学習" :
+        resume = True
+
         st.markdown("###### import model(モデル名.ptをアップロードしてください)")
         multi_mdl = '''*注：日本語を含むファイルはアップロードしないでください。
              *対応する形式：.pt
         '''
         st.markdown(multi_mdl)
-        model_path = st.file_uploader('import model(モデル名.ptをアップロードしてください)', type=['pt'], label_visibility="hidden")
+
+        model_path = st.file_uploader(
+            'import model(モデル名.ptをアップロードしてください)',
+            type=['pt'],
+            label_visibility="hidden"
+            )
         if model_path :
             use_model = f"{model_path.name}"
-            # save_path=os.path.join(class_dir_path,model_path.name)
-
-    # ユーザー選択モデルを使用
+    
+    # １から学習の場合
     elif selection_model == "１から学習":
-        select_model = st.selectbox("デフォルトのモデルを選択してください。",
-                                    # ("yolov8n-cls.pt(6MB)", "yolov8s-cls.pt(22MB)", "yolov8m-cla.pt(52MB)", "yolov8l-cls.pt(87MB)", "yolov8x-cls.pt(137MB)"))
-                                    ("yolov8n-cls.pt(5.3MB)", "yolov8s-cls.pt(12.3MB)", "yolov8m-cls.pt(32.7MB)", "yolov8l-cls.pt(71.7MB)", "yolov8x-cls.pt(110.0MB)"))
-        # use_model = f"../model/{select_model.rsplit('(',1)[0]}"
+        resume = False
+
+        select_model = st.selectbox(
+            "デフォルトのモデルを選択してください。",
+                (
+                    "yolov8n-cls.pt(5.3MB)",
+                    "yolov8s-cls.pt(12.3MB)",
+                    "yolov8m-cls.pt(32.7MB)",
+                    "yolov8l-cls.pt(71.7MB)",
+                    "yolov8x-cls.pt(110.0MB)"
+                )
+            )
         use_model = f"{select_model.rsplit('(',1)[0]}"
-        path=f"models/{use_model}"
+        # path=f"models/{use_model}"
         
     st.write("\n\n\n")
     
     
-
-    # ハイパーパラメータを取得
-    # # オプション
+    #############################
+    # パラメータ設定
+    #############################
     with st.expander("オプション"):
         device_options = ["CPU", "GPU"]
         selection_device = st.selectbox("デバイス選択", device_options, index=device_options.index("GPU"), key="selection_device")
@@ -239,7 +235,10 @@ def image_classification():
             unsafe_allow_html=True
         )
 
-    # ２つの列を作成
+
+    ######################
+    # オプションボタンの作成
+    ######################
     col1, col2 = st.columns(2)
 
     with col2:
@@ -248,22 +247,27 @@ def image_classification():
     with col1:
         start_button = st.button('Start')
 
-
+    ######################
+    # 学習API の呼び出し
+    ######################
     if start_button:
         if img_toggle == "LabelStadioFormat":
             current_datetime = datetime.now()
+            
             # ディレクトリ名に使用するフォーマット(yyyyMMddhhmmss)
             directory_name_format = "%Y%m%d_%H%M%S"
             run_id=f"{current_datetime.strftime(directory_name_format)}"
             st.session_state.run_id=run_id
+            
             # 画像分類ディレクトリの作成
             class_directory_name = f"{current_datetime.strftime(directory_name_format)}/pre_data"
             class_dir_path=os.path.join(parent_directory, class_directory_name)
-            # os.makedirs(class_dir_path, exist_ok=True)
+            
             # 作成したいディレクトリのパスを作成
             train_directory_name = f"train"
             val_directory_name = f"val"
             yaml_directory_name = f"{current_datetime.strftime(directory_name_format)}/pre_data"
+            
             # 完全なディレクトリパスを作成
             train_dir_path = os.path.join(class_dir_path, train_directory_name)
             val_dir_path = os.path.join(class_dir_path, val_directory_name)
@@ -277,14 +281,15 @@ def image_classification():
             if selection_model == "再学習" :
                 with open(save_path,"wb") as f:
                     f.write(model_path.getbuffer())
-            elif selection_model == "１から学習":
-                shutil.copy(path,class_dir_path)
-                # 画像をtrainとvalに分割する
-            train_ratio = div_ratio/100
-            # os.makedirs(train_dir_path, exist_ok=True)
-            # os.makedirs(val_dir_path, exist_ok=True)
+            # elif selection_model == "１から学習":
+            #     shutil.copy(path,class_dir_path)
+            
 
-            # if img_toggle == "LabelStadioFormat":
+            ###################################################        
+            # データセットを学習用（train）と検証用（val）に分割する
+            ###################################################
+            train_ratio = div_ratio/100
+
             if files_path is not None:
                 with TemporaryDirectory() as temp_dir:
                     with io.BytesIO(files_path.read()) as zip_file:
@@ -296,22 +301,27 @@ def image_classification():
                                         if file_name.startswith("images"):
                                             with zip_ref.open(file_name) as file, open(os.path.join(temp_dir, os.path.basename(file_name)), 'wb') as target_file:
                                                 target_file.write(file.read())
+                    
                     # ランダムシャッフルして分割する
                     image_classification_random_shuffle(train_dir_path, val_dir_path, csv_path, temp_dir, train_ratio)
+        
         elif img_toggle == "YOLO Format":
             current_datetime = datetime.now()
+            
             # ディレクトリ名に使用するフォーマット(yyyyMMddhhmmss)
             directory_name_format = "%Y%m%d_%H%M%S"
             run_id=f"{current_datetime.strftime(directory_name_format)}"
             st.session_state.run_id=run_id
+            
             # 画像分類ディレクトリの作成
             class_directory_name = f"{current_datetime.strftime(directory_name_format)}/pre_data"
             class_dir_path=os.path.join(parent_directory, class_directory_name)
-            # os.makedirs(class_dir_path, exist_ok=True)
+            
             # 作成したいディレクトリのパスを作成
             train_directory_name = f"train"
             val_directory_name = f"val"
             yaml_directory_name = f"{current_datetime.strftime(directory_name_format)}/pre_data"
+            
             # 完全なディレクトリパスを作成
             train_dir_path = os.path.join(class_dir_path, train_directory_name)
             val_dir_path = os.path.join(class_dir_path, val_directory_name)
@@ -324,8 +334,12 @@ def image_classification():
             if selection_model == "再学習" :
                 with open(save_path,"wb") as f:
                     f.write(model_path.getbuffer())
-            elif selection_model == "１から学習":
-                shutil.copy(path,class_dir_path)
+            # elif selection_model == "１から学習":
+            #     shutil.copy(path,class_dir_path)
+
+            ###################################################        
+            # データセットを学習用（train）と検証用（val）に分割する
+            ###################################################
             train_ratio = div_ratio/100
 
             if zip_path is not None:
@@ -342,25 +356,26 @@ def image_classification():
                                         os.makedirs(temp_save_path, exist_ok=True)
                                         with zip_ref.open(file_name) as file, open(os.path.join(temp_save_path, os.path.basename(file_name)), 'wb') as target_file:
                                             target_file.write(file.read())
-                                        # subdirs=[p.name for p in ]
-                                        # if file_name.startswith("hot"):
-                                        #     # save_hot_path=os.path.join(class_dir_path,"hot")
-                                        #     with zip_ref.open(file_name) as file, open(os.path.join(save_hot_path, os.path.basename(file_name)), 'wb') as hot_file:
-                                        #         hot_file.write(file.read())
-                                        # elif file_name.startswith("cool"):
-                                        #     # save_cool_path=os.path.join(class_dir_path,"cool")
-                                        #     with zip_ref.open(file_name) as file, open(os.path.join(save_cool_path, os.path.basename(file_name)), 'wb') as cool_file:
-                                        #         cool_file.write(file.read())
                     random_shuffle(train_dir_path, val_dir_path, temp_dir, train_ratio)
 
-        
+
+        #################
+        # FaseAPI にpost
+        #################
         result_name = f"{current_datetime.strftime(directory_name_format)}_{use_model}_学習結果"
         create_imgclass_yaml(train_dir_path, val_dir_path, epochs,batch,save,cache, device, workers, hsv_h, hsv_s, hsv_v, degrees, flipud, fliplr, result_name,yaml_dir_path,translate,scale,shear,perspective,mosaic,mixup,copy_paste)
         with st.spinner("画像分類の学習を行っています..."):
-            # create_imgclass_yaml(train_dir_path, val_dir_path, epochs,batch,save,cache, device, workers, hsv_h, hsv_s, hsv_v, degrees, flipud, fliplr, result_name)
-            data = { "run_id": f"{run_id}"}
+            data = {
+                "run_id": f"{run_id}",
+                "resume": f"{resume}",
+                "use_model": f"{use_model}",
+                }
             response=requests.post("http://yolo:81/train_img/",data=data)
 
+
+        #######################
+        # 応答結果に処理の分岐
+        #######################
         if response.status_code == 200:
             st.write("学習完了")
 
@@ -373,23 +388,20 @@ def image_classification():
                 st.session_state.zip_data=zip_data
                 st.session_state.zip_filename=zip_path
             os.remove(zip_path)
-            # st.download_button(
-            #         label="画像分類の学習結果をダウンロード",
-            #         data=zip_data,
-            #         file_name=zip_path,
-            #         mime='application/zip',
-            #         disabled=False,
-            #         on_click=lambda: on_download_click(parent_directory,run_id)
-            #     )
+
         elif response.status_code == 503:
             st.warning("""
             メモリ不足のためアプリが実行できません。
             手順書に従って立ち下げ、立ち上げ操作を行ってください。
             """)
         else:
+
             st.error("予期せぬエラーが発生しました。")
             st.error("表示されているエラーメッセージをコピーのうえ、サポート窓口までご連絡ください。")
 
+    #######################
+    # 学習結果のダウンロード
+    #######################
     if st.session_state.zip_data and st.session_state.zip_filename and st.session_state.view and st.session_state.run_id:
         run_id=st.session_state.run_id
         st.download_button(
