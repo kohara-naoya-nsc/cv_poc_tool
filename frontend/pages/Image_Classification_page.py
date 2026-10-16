@@ -143,7 +143,7 @@ def image_classification():
     # 学習方法の選択
     ###########################
     model_options = ["再学習", "１から学習"]
-    selection_model = st.pills("学習方法選択", model_options, index=0, selection_mode="single")
+    selection_model = st.pills("学習方法選択", model_options, default="再学習", selection_mode="single")
 
     # 再学習の場合
     if selection_model == "再学習" :
