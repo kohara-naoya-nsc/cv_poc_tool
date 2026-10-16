@@ -19,18 +19,15 @@ class ExceptionError(Exception):
 
 
 class YOLO:
-    def __init__(self, use_model=None):
+    def __init__(self, model_path=None):
         """モデルの初期化
         Args:
             model_path: YOLOモデルのパス(デフォルト: "models/yolov8n.pt")
         """
         # model_path = next((f for f in input_dir.glob("*.pt") if f.is_file() ), None)
         try:
-            # model_path=glob.glob(os.path.join(input_dir,"*.pt"))
-            pwd = os.getcwd()
-            model_path = glob.glob(os.path.join(pwd, "models", use_model))
-            self.use_model = Path(model_path[0]).stem
-            self.model = UltralyticsYOLO(model_path[0])
+            self.use_model = Path(model_path).stem
+            self.model = UltralyticsYOLO(model_path)
 
         except Exception as e:
             error_str = str(e)
