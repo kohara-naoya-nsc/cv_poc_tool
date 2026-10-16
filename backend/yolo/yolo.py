@@ -323,31 +323,19 @@ class YOLO:
         # 学習データのyamlファイルをリストアップ
         yaml_files = [f for f in input_dir.glob("*.yaml") if f.is_file()]
         pt_file = next((f for f in input_dir.glob("*.pt") if f.is_file() ), None)
-            # print(f"yaml_files:{yaml_files}")
         if not yaml_files:
             raise ValueError(f"No YAML configuration file found in the directory: {input_dir}")
 
         if pt_file is None:
             raise ValueError(f"No model found in the directory: {input_dir}")
 
-        result_name=f"{run_id}_{pt_file.name}_学習結果"
+        result_name = f"{run_id}_{pt_file.name}_学習結果"
         yaml_path = str(yaml_files[0])
-        # yaml_path = Path(yaml_files[0]).resolve()
-        # yaml_path = f"{input_dir}/yaml_data.yaml"
-        # print(f"存在確認：{os.path.exists(yaml_path)}")
-        # print(yaml_path)
         yaml_para = str(yaml_files[1])
-        # print(yaml_para)
         cfg = yaml_para
         with open(cfg,'r') as stream:
             cfg_args=yaml.safe_load(stream)
-                # print(f"cfg_args:{cfg_args}")
-            # result_name=f"{run_id}_yolov8n.pt_学習結果"
-                # 学習実行
-            # self.model.train(data=yaml_path, name=result_name, **cfg_args)
         try:
-            # settings.update({'runs_dir': f'/app/shared/train/{run_id}/result_data'})
-            # settings.reset()
             if flag == True:
                 self.model.train(data=yaml_path, name=result_name, project=output_dir, **cfg_args)
             if flag == False:
