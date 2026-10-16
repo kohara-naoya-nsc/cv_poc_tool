@@ -173,8 +173,8 @@ def tool_reshape_app():
                         img_buffer = io.BytesIO()
                         # img.save(img_buffer, format="JPEG")
                         # zip_file.writestr(f"transformed_image_{i+1}.jpg", img_buffer.getvalue())
-                        img.save(img_buffer, format=img_format)
-                        zip_file.writestr(f"transformed_image_{i+1}.{ext}", img_buffer.getvalue())
+                        img.save(img_buffer, format="JPEG")
+                        zip_file.writestr(f"transformed_image_{i+1}.jpg", img_buffer.getvalue())
     
                 st.download_button(
                     label="射影変換した画像をダウンロード",
