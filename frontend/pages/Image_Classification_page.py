@@ -277,6 +277,7 @@ def image_classification():
             if selection_model == "再学習" :
                 with open(save_path,"wb") as f:
                     f.write(model_path.getbuffer())
+                    use_model = save_path
 
             # elif selection_model == "１から学習":
             #     shutil.copy(path,class_dir_path)
@@ -326,11 +327,13 @@ def image_classification():
             os.makedirs(class_dir_path, exist_ok=True)
             os.makedirs(train_dir_path, exist_ok=True)
             os.makedirs(val_dir_path, exist_ok=True)
-            save_path=os.path.join(class_dir_path,use_model)
+            save_path = os.path.join(class_dir_path, use_model)
 
-            if selection_model == "再学習" :
+            if selection_model == "再学習":
                 with open(save_path,"wb") as f:
                     f.write(model_path.getbuffer())
+                    use_model = save_path
+
             # elif selection_model == "１から学習":
             #     shutil.copy(path,class_dir_path)
 
