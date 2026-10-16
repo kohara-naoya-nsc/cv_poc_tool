@@ -161,7 +161,6 @@ async def train(
 
     # 再学習する場合
     else:
-        print(f"Resuming training with modelあああああああああ: {use_model}")
         yolo = YOLO(use_model)
     
     flag = False
