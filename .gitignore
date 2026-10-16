@@ -17,3 +17,6 @@ backend/patchcore/patchcore-ad-main
 # 仮想環境
 .venv/
 .vscode/settings.json
+
+# 学習成果物
+backend/yolo/runs/
