@@ -1,0 +1,20 @@
+# base requirements
+fastapi[all]
+uvicorn
+
+# model requirements
+opencv-python
+scikit-learn
+rich
+faiss-gpu-cu12
+thop
+torch
+torchvision
+torchaudio
+
+# test requirements
+pytest
+pytest-cov
+pytest-mock
+ruff
+

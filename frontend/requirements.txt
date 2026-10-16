@@ -1,0 +1,7 @@
+streamlit
+extra_streamlit_components
+streamlit_image_coordinates
+opencv-python
+PyYAML
+requests
+numpy

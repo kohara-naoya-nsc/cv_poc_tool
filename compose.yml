@@ -1,0 +1,84 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    depends_on:
+      - yolo
+      - patchcore
+      - paddleocr
+    volumes:
+      - ./frontend:/app
+      - ./shared:/app/shared
+    networks:
+      - backend_net
+
+  yolo:
+    build:
+      context: ./backend/yolo
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    environment:
+      - YOLO_CONFIG_DIR=/app
+    ports:
+      - "81:81"
+    volumes:
+      - ./backend/yolo:/app
+      - ./shared:/app/shared
+    networks:
+      - backend_net
+    shm_size: '10g'
+
+  patchcore:
+    build:
+      context: ./backend/patchcore
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    ports:
+      - "82:82"
+    volumes:
+      - ./backend/patchcore:/app
+      - ./shared:/app/shared
+    networks:
+      - backend_net
+    shm_size: '10g'
+
+  paddleocr:
+    build:
+      context: ./backend/paddleocr
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    ports:
+      - "83:83"
+    volumes:
+      - ./backend/paddleocr:/app
+      - ./shared:/app/shared
+    networks:
+      - backend_net
+    shm_size: '10g'
+
+networks:
+  backend_net:
+    name: cv_poc_tool-backend-network
+    driver: bridge

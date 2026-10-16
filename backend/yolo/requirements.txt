@@ -1,0 +1,16 @@
+# base requirements
+fastapi[all]
+uvicorn
+
+# model requirements
+ultralytics
+lapx
+torch
+torchvision
+torchaudio
+
+# test requirements
+pytest
+pytest-cov
+pytest-mock
+ruff

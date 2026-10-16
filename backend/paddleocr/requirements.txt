@@ -1,0 +1,34 @@
+# base requirements
+fastapi[all]
+uvicorn
+
+# model requirements
+shapely
+scikit-image
+pyclipper
+lmdb
+tqdm
+numpy
+rapidfuzz
+opencv-python
+opencv-contrib-python
+cython
+Pillow
+# pyyaml
+requests
+torch
+torchvision
+torchaudio
+albumentations==1.4.10
+
+# to be compatible with albumentations
+albucore==0.0.13
+packaging
+paddlepaddle
+paddleocr
+
+# test requirements
+pytest
+pytest-cov
+pytest-mock
+ruff
