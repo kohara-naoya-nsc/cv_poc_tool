@@ -198,16 +198,11 @@ def image_classification():
         st.info("以下の項目は学習データセット水増しオプション")
         degrees = st.slider("degrees:最大回転範囲", min_value=0.0, max_value=45.0, value=0.0, key="degrees")
         flipud_toggle = st.toggle("flipud:垂直方向の反転", False, key="flipud_toggle")
-        if flipud_toggle :
-            flipud = 0.5
-        else :
-            flipud = 0.0
+        flipud = 0.5 if flipud_toggle else 0.0
+
         fliplr_toggle = st.toggle("fliplr:水平方向の反転", False, key="fliplr_toggle")
-        if fliplr_toggle :
-            fliplr = 0.5
-        else :
-            fliplr = 0.0
-    
+        fliplr = 0.5 if fliplr_toggle else 0.0
+
     with st.expander("高度なオプション"):
         st.info("必要に応じて変更を加えてください。")
         div_ratio = st.slider("ファイル分割率%", min_value=0, max_value=100, value=70, key="div_ratio")
@@ -247,6 +242,7 @@ def image_classification():
     with col1:
         start_button = st.button('Start')
 
+
     ######################
     # 学習API の呼び出し
     ######################
@@ -276,11 +272,12 @@ def image_classification():
             os.makedirs(train_dir_path, exist_ok=True)
             os.makedirs(val_dir_path, exist_ok=True)
             os.chmod(f'{parent_directory}/{run_id}', 0o777)
-            save_path=os.path.join(class_dir_path,use_model)
+            save_path=os.path.join(class_dir_path, use_model)
 
             if selection_model == "再学習" :
                 with open(save_path,"wb") as f:
                     f.write(model_path.getbuffer())
+
             # elif selection_model == "１から学習":
             #     shutil.copy(path,class_dir_path)
             
@@ -379,7 +376,8 @@ def image_classification():
         if response.status_code == 200:
             st.write("学習完了")
 
-            folder_path = f"{parent_directory }{run_id}/result_data/{run_id}_{os.path.basename(use_model)}_学習結果"
+            model_name = os.path.splitext(os.path.basename(use_model))[0]
+            folder_path = os.path.join(parent_directory, run_id, "result_data", f"{run_id}_{model_name}_学習結果")
             # st.write(f"folder_path:{folder_path}")
             zip_path = f"{current_datetime.strftime(directory_name_format)}_{os.path.basename(use_model)}_学習結果.zip"            
             shutil.make_archive(zip_path.replace('.zip', ''), 'zip', folder_path)

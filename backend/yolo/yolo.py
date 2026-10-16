@@ -19,12 +19,19 @@ class ExceptionError(Exception):
 
 
 class YOLO:
-    def __init__(self):
+    def __init__(self, use_model=None):
+        """モデルの初期化
+        Args:
+            model_path: YOLOモデルのパス(デフォルト: "models/yolov8n.pt")
+        """
+        # model_path = next((f for f in input_dir.glob("*.pt") if f.is_file() ), None)
         try:
+            # model_path=glob.glob(os.path.join(input_dir,"*.pt"))
             pwd = os.getcwd()
-            model_path = glob.glob(os.path.join(f"{pwd}/models/","*.pt"))
-            print(f"###########model_path:{model_path}################")
+            model_path = glob.glob(os.path.join(pwd, "models", use_model))
+            self.use_model = Path(model_path[0]).stem
             self.model = UltralyticsYOLO(model_path[0])
+
         except Exception as e:
             error_str = str(e)
             raise ExceptionError(error_str) from e
@@ -322,24 +329,26 @@ class YOLO:
         """
         # 学習データのyamlファイルをリストアップ
         yaml_files = [f for f in input_dir.glob("*.yaml") if f.is_file()]
-        pt_file = next((f for f in input_dir.glob("*.pt") if f.is_file() ), None)
+        # pt_file = next((f for f in input_dir.glob("*.pt") if f.is_file() ), None)
+        pt_file = Path(os.getcwd(), f"models/{self.use_model}").stem
         if not yaml_files:
             raise ValueError(f"No YAML configuration file found in the directory: {input_dir}")
 
-        if pt_file is None:
-            raise ValueError(f"No model found in the directory: {input_dir}")
+        # if pt_file is None:
+        #     raise ValueError(f"No model found in the directory: {input_dir}")
 
-        result_name = f"{run_id}_{pt_file.name}_学習結果"
+        result_name = f"{run_id}_{pt_file}_学習結果"
         yaml_path = str(yaml_files[0])
         yaml_para = str(yaml_files[1])
         cfg = yaml_para
+        project_dir = output_dir.resolve()
         with open(cfg,'r') as stream:
             cfg_args=yaml.safe_load(stream)
         try:
             if flag == True:
-                self.model.train(data=yaml_path, name=result_name, project=output_dir, **cfg_args)
+                self.model.train(data=yaml_path, name=result_name, project=project_dir, **cfg_args)
             if flag == False:
-                self.model.train(data=input_dir, name=result_name, project=output_dir, **cfg_args)
+                self.model.train(data=input_dir, name=result_name, project=project_dir, **cfg_args)
             
             return f"Training completed. Results saved in {output_dir / 'result_data'}"
         except Exception as e:
