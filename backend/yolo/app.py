@@ -18,7 +18,7 @@ async def predict(run_id: str = Form(...)):
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    yolo = YOLO(input_dir)
+    yolo = YOLO()
     flag = True
     type="image"
     # YOLO推論       
@@ -42,7 +42,7 @@ async def predict(run_id: str = Form(...)):
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    yolo = YOLO(input_dir)
+    yolo = YOLO()
     flag = True
     type="movie"
     # YOLO推論       
@@ -66,7 +66,7 @@ async def predict(run_id: str = Form(...)):
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    yolo = YOLO(input_dir)
+    yolo = YOLO()
     flag = False
     type="image"
     # YOLO推論       
@@ -90,7 +90,7 @@ async def predict(run_id: str = Form(...)):
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    yolo = YOLO(input_dir)
+    yolo = YOLO()
     flag = False
     type="movie"
     # YOLO推論       
@@ -104,24 +104,27 @@ async def predict(run_id: str = Form(...)):
 
 @app.post("/train/")
 async def train(run_id: str = Form(...)):
+    ###############################
     # 入力データのディレクトリを確認
+    ###############################
     input_dir = Path(f"shared/train/{run_id}/pre_data")
     if not input_dir.exists():
         raise HTTPException(status_code=404, detail=f"Input directory does not exist: {input_dir}")
         
+    ###############################
     # 出力データのディレクトリを確認
+    ###############################
     output_dir = Path(f"shared/train/{run_id}/result_data")
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
-        
+
+    ###############################
     # YOLO学習
-    # training_status["done"]=False
-    # BackgroundTask.add_task(yolo.train(input_dir, output_dir, run_id))
-    yolo = YOLO(input_dir)
+    ###############################
+    yolo = YOLO()
     flag = True
     try:
         yolo.train(input_dir, output_dir, run_id, flag)
-        # raise HTTPException(status_code=200)
     except CudaOutOfMemoryError:
         raise HTTPException(status_code=503, detail="CUDA out of memory")
     except ExceptionError:
@@ -142,7 +145,7 @@ async def train(run_id: str = Form(...)):
     # YOLO学習
     # training_status["done"]=False
     # BackgroundTask.add_task(yolo.train(input_dir, output_dir, run_id))
-    yolo = YOLO(input_dir)
+    yolo = YOLO()
     flag = False
     try:
         yolo.train(input_dir, output_dir, run_id, flag)
