@@ -178,8 +178,6 @@ def image_classification():
                 )
             )
         use_model = f"{select_model.rsplit('(',1)[0]}"
-        # path=f"models/{use_model}"
-        
     st.write("\n\n\n")
     
     
