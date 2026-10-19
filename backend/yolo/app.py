@@ -4,8 +4,6 @@ from pathlib import Path
 from yolo import YOLO, CudaOutOfMemoryError, ExceptionError
 
 app = FastAPI()
-# yolo = YOLO()
-# training_status = {"done": False}
 
 @app.post("/predict/image/")
 async def predict(run_id: str = Form(...)):
@@ -25,7 +23,6 @@ async def predict(run_id: str = Form(...)):
     # YOLO推論       
     try:
         yolo.predict(input_dir, output_dir, run_id, flag, type)
-        # raise HTTPException(status_code=200)
     except CudaOutOfMemoryError:
         raise HTTPException(status_code=503, detail="CUDA out of memory")
     except ExceptionError:
@@ -56,7 +53,13 @@ async def predict(run_id: str = Form(...)):
         raise HTTPException(status_code=500)
 
 @app.post("/predict_img/image/")
-async def predict(run_id: str = Form(...)):
+async def predict(
+    run_id: str = Form(...),
+    model_path: str = Form(...)
+    ):
+    ###############################
+    # 各ディレクトリを確認
+    ###############################
     # 入力データのディレクトリを確認
     input_dir = Path(f"shared/predict/{run_id}/pre_data")
     if not input_dir.exists():
@@ -67,20 +70,28 @@ async def predict(run_id: str = Form(...)):
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    yolo = YOLO()
+    yolo = YOLO(model_path)
     flag = False
     type="image"
+
+    ###############################
     # YOLO推論       
+    ###############################
     try:
         yolo.predict(input_dir, output_dir, run_id, flag, type)
-        # raise HTTPException(status_code=200)
     except CudaOutOfMemoryError:
         raise HTTPException(status_code=503, detail="CUDA out of memory")
     except ExceptionError:
         raise HTTPException(status_code=500)
     
 @app.post("/predict_img/movie/")
-async def predict(run_id: str = Form(...)):
+async def predict(
+    run_id: str = Form(...),
+    model_path: str = Form(...)
+    ):
+    ###############################
+    # 各ディレクトリを確認
+    ###############################
     # 入力データのディレクトリを確認
     input_dir = Path(f"shared/predict/{run_id}/pre_data")
     if not input_dir.exists():
@@ -91,13 +102,15 @@ async def predict(run_id: str = Form(...)):
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    yolo = YOLO()
+    yolo = YOLO(model_path)
     flag = False
     type="movie"
+
+    ###############################
     # YOLO推論       
+    ###############################
     try:
         yolo.predict(input_dir, output_dir, run_id, flag, type)
-        # raise HTTPException(status_code=200)
     except CudaOutOfMemoryError:
         raise HTTPException(status_code=503, detail="CUDA out of memory")
     except ExceptionError:
