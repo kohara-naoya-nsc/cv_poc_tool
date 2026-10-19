@@ -7,6 +7,9 @@ app = FastAPI()
 
 @app.post("/predict/")
 async def predict(run_id: str = Form(...)):
+    ##########################
+    # 各ディレクトリを確認
+    ##########################
     # 入力データのディレクトリを確認
     input_dir = Path(f"shared/predict/{run_id}/pre_data")
     if not input_dir.exists():
@@ -17,10 +20,11 @@ async def predict(run_id: str = Form(...)):
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
 
+    ##########################
     # paddleocr推論       
+    ##########################
     try:
         paddleocr_main(input_dir, output_dir, run_id)
-        # raise HTTPException(status_code=200)
     except CudaOutOfMemoryError:
         raise HTTPException(status_code=503, detail="CUDA out of memory")
     except ExceptionError:
