@@ -216,6 +216,9 @@ async def predict(run_id: str = Form(...)):
 
 @app.post("/train/")
 async def train(run_id: str = Form(...)):
+    ##########################
+    # 各ディレクトリを確認
+    ##########################
     # 入力データのディレクトリを確認
     input_dir = Path(f"shared/train/{run_id}/pre_data")
     if not input_dir.exists():
@@ -230,7 +233,10 @@ async def train(run_id: str = Form(...)):
     yaml_path = str(yaml_files[0])
     with open(yaml_path,'r') as stream:
         config=yaml.safe_load(stream)
+
+    #######################
     # PatchCore学習
+    #######################
     filepath=os.path.join(output_dir,f"{run_id}_{config.get('net_model')}.faiss")
     dataset_arg={
         "load_shape" : (config.get('load_size'), config.get('load_size')),
@@ -243,7 +249,6 @@ async def train(run_id: str = Form(...)):
     try:
         patchcore.fit(dataset, config.get('batch'), config.get('num_workers'))
         patchcore.save(filepath)
-    #     # raise HTTPException(status_code=200)
     except Exception as e:
         error_str = str(e)
         print(f"Error in predict: {error_str}")
