@@ -25,7 +25,7 @@ if __name__ == "__main__":
     # 保存ディレクトリが存在しない場合は作成する
     os.makedirs(model_dir, exist_ok=True)
 
-   # ダウンロードするモデル名の一覧
+    # ダウンロードするモデル名の一覧
     model_names = [
         'yolov8n.pt',
         'yolov8m.pt',
