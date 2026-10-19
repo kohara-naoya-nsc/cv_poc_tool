@@ -16,7 +16,7 @@ from tempfile import TemporaryDirectory
 
 
 def para_change():
-    # st.session_state.clear()
+    """パラメータ初期化"""
     st.session_state['selection_device'] = "GPU"
     st.session_state['device'] = "0"
     st.session_state['load_size'] = 224
@@ -33,18 +33,15 @@ def para_change():
     st.session_state['num_workers'] = 1
 
 
-# def extract_image_name(full_path):
-#     parts = full_path.split('-')
-#     return '-'.join(parts[1:])
-
 def on_download_click(parent_directory,run_id):
+    """後処理"""
     delete_path=os.path.join(parent_directory,run_id)
     shutil.rmtree(delete_path)
     st.session_state.view=False
 
 
 def random_shuffle(train_dir_path, df, upload_dir, annotation):
-    # 画像ファイルと対応するラベルファイルのリストを取得
+    """画像ファイルと対応するラベルファイルのリストを取得"""
     csv_data = df["image"].to_list()
     csv_files = [os.path.basename(path) for path in csv_data]
     images_names = []
@@ -62,11 +59,15 @@ def random_shuffle(train_dir_path, df, upload_dir, annotation):
             shutil.move(os.path.join(upload_dir, img[1]), os.path.join(train_dir_path, img[1]))
 
 def move_file(train_dir_path, temp_dir):
-    # 画像ファイルと対応するラベルファイルのリストを取得
+    """画像ファイルと対応するラベルファイルのリストを取得"""
     for file in os.listdir(temp_dir):
         shutil.move(os.path.join(temp_dir, file), os.path.join(train_dir_path, file))
 
 def patchcore():
+    """異常検知：学習ページ"""
+
+    # 共有ディレクトリ
+    parent_directory = "shared/train/"
 
     st.title("【学習】異常検知")
 
@@ -81,31 +82,23 @@ def patchcore():
     if'run_id' not in st.session_state:
         st.session_state.run_id=None
 
-    # 任意の場所(親ディレクトリ)を指定
-    parent_directory = "shared/train/"
-    # 現在の日付と時刻を取得
-    # current_datetime = datetime.now()
-    # # ディレクトリ名に使用するフォーマット(yyyyMMddhhmmss)
-    # directory_name_format = "%Y%m%d_%H%M%S"
-    # run_id=f"{current_datetime.strftime(directory_name_format)}"
-    # # 作成したいディレクトリのパスを作成
-    # class_directory_name = f"{current_datetime.strftime(directory_name_format)}/pre_data"
-    # class_dir_path=os.path.join(parent_directory, class_directory_name)
-    # train_directory_name = f"{current_datetime.strftime(directory_name_format)}/pre_data"
 
-    # # 完全なディレクトリパスを作成
-    # train_dir_path = os.path.join(parent_directory, train_directory_name)
-
-    # 画像をアップロードする
-    # 注釈を挿入
+    ########################
+    # データセットをアップロード
+    ########################
+    # データセットの形式を選択
     img_options = ["LabelStadioFormat", "Anotated Format"]
     img_toggle = st.pills("推論するものをアップロードしてください。", img_options, default="Anotated Format", selection_mode="single")
+    
+    # LabelStadioFormatの場合
     if img_toggle == "LabelStadioFormat":
         st.markdown("###### import zipfile(zipファイルをアップロードしてください)")
+        
         multi_img = '''*注：日本語を含むファイルはアップロードしないでください。
         *対応する形式：.zip
         '''
         st.markdown(multi_img)
+        
         files_path = st.file_uploader('import zipfile(zipファイルをアップロードしてください)', type=['zip'], accept_multiple_files=False, label_visibility="hidden")
         st.write("\n\n\n\n\n")
 
@@ -115,35 +108,45 @@ def patchcore():
              *対応する形式：.csv
         '''
         st.markdown(multi_csv)
+        
         csv_path = st.file_uploader('import csv(アノテーションラベルをアップロードしてください)', type=['csv'], label_visibility="hidden")
         st.write("\n\n\n\n\n")
 
         if csv_path is not None:
             df = pandas.read_csv(csv_path)
             csv_label=df["choice"].unique().tolist()
-        
+
+    # Anotated Formatの場合
     elif img_toggle == "Anotated Format":
         st.markdown("###### 画像をアップロードしてください")
         multi_img = '''*注：日本語を含むファイルはアップロードしないでください。
         *対応する形式：.zip
         '''
         st.markdown(multi_img)
+        
         zip_path = st.file_uploader('import zipfile(zipファイルをアップロードしてください)', type=['zip'], label_visibility="hidden", key="hot_zip")        
         st.write("\n\n\n\n")
 
-    # ハイパーパラメータを取得
-    # オプション
+
+    #####################
+    # オプション設定
+    #####################
     with st.expander("オプション"):
         annotat_option = [""]
+        
         device_options = ["CPU", "GPU"]
-        selection_device = st.selectbox("デバイス選択", device_options, index=device_options.index("GPU"), key="selection_device")
+        selection_device = st.selectbox(
+            "デバイス選択", device_options,
+            index=device_options.index("GPU"),
+            key="selection_device"
+            )
         if selection_device == "CPU" :
             device = selection_device
         elif selection_device == "GPU" :
             gpu_options = {0:"0", 1:"1", 2:"2", 3:"3"}
             device = st.multiselect("使用するGPUの番号を選択してください。", gpu_options, default=0, key="device")
+        
         if img_toggle == "LabelStadioFormat" and csv_path is not None:
-        # if csv_path is not None:
             for label in csv_label:
                 annotat_option.append(label)
             annotation=st.selectbox("正常のラベルを選択してください。",annotat_option)
@@ -171,7 +174,9 @@ def patchcore():
             num_workers = st.slider("num_workers:使用するCPUの数を選択(GPU選択時は0にしてください)", min_value=0, max_value=20, value=0, key="num_workers")
 
 
-    # ２つの列を作成
+    ##################################
+    # パラメータ初期化と開始ボタンの配置
+    ##################################
     col1, col2 = st.columns(2)
 
     with col2:
@@ -181,13 +186,16 @@ def patchcore():
         start_button = st.button('Start')
 
     if start_button:
-            # 画像をtrainとvalに分割する
+        # 画像をtrainとvalに分割する
         train_ratio = 70/100
-        current_datetime = datetime.now()
+        
+        
         # ディレクトリ名に使用するフォーマット(yyyyMMddhhmmss)
+        current_datetime = datetime.now()
         directory_name_format = "%Y%m%d_%H%M%S"
         run_id=f"{current_datetime.strftime(directory_name_format)}"
         st.session_state.run_id=run_id
+        
         # 作成したいディレクトリのパスを作成
         class_directory_name = f"{current_datetime.strftime(directory_name_format)}/pre_data"
         class_dir_path=os.path.join(parent_directory, class_directory_name)
@@ -195,7 +203,6 @@ def patchcore():
 
         # 完全なディレクトリパスを作成
         train_dir_path = os.path.join(parent_directory, train_directory_name)
-        # os.makedirs(class_dir_path, exist_ok=True)
         os.makedirs(train_dir_path, exist_ok=True)
         os.chmod(f'{parent_directory}/{run_id}', 0o777)
         if img_toggle == "LabelStadioFormat":
