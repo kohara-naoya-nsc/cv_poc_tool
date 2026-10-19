@@ -121,21 +121,24 @@ def object_prediction():
         ######################################################
         if file_path is not None:
             for file in file_path:
-                save_path=os.path.join(train_dir_path,file.name)
+                file_save_path=os.path.join(train_dir_path,file.name)
 
-                with open(save_path,"wb") as f:
+                with open(file_save_path,"wb") as f:
                     f.write(file.getbuffer())
 
         if model_path is not None:
-            save_path=os.path.join(train_dir_path,model_path.name)
+            model_save_path=os.path.join(train_dir_path,model_path.name)
 
-            with open(save_path,"wb") as f:
+            with open(model_save_path,"wb") as f:
                 f.write(model_path.getbuffer())
 
         #################
         # FaseAPI にpost
         #################
-        data = { "run_id": f"{run_id}"}
+        data = {
+            "run_id": f"{run_id}",
+            "model_path": f"{model_save_path}",
+            }
         with st.spinner("物体検出の推論を行っています..."):
             if img_toggle == "画像" :
                 response=requests.post("http://yolo:81/predict/image/",data=data)
