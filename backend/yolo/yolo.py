@@ -22,7 +22,7 @@ class YOLO:
     def __init__(self, model_path=None):
         """モデルの初期化
         Args:
-            model_path: YOLOモデルのパス(デフォルト: "models/yolov8n.pt")
+            model_path: YOLOモデルのパス
         """
         # model_path = next((f for f in input_dir.glob("*.pt") if f.is_file() ), None)
         try:
