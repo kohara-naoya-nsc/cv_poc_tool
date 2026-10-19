@@ -117,17 +117,20 @@ async def predict(
         raise HTTPException(status_code=500)
 
 @app.post("/train/")
-async def train(run_id: str = Form(...)):
+async def train(
+    run_id: str = Form(...),
+    resume: bool = Form(...),
+    use_model: str = Form(...),
+    ):
+    ###############################
+    # 各ディレクトリを確認
     ###############################
     # 入力データのディレクトリを確認
-    ###############################
     input_dir = Path(f"shared/train/{run_id}/pre_data")
     if not input_dir.exists():
         raise HTTPException(status_code=404, detail=f"Input directory does not exist: {input_dir}")
         
-    ###############################
     # 出力データのディレクトリを確認
-    ###############################
     output_dir = Path(f"shared/train/{run_id}/result_data")
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -135,7 +138,16 @@ async def train(run_id: str = Form(...)):
     ###############################
     # YOLO学習
     ###############################
-    yolo = YOLO()
+    # １から学習する場合
+    if resume is False:
+        pwd = os.getcwd()
+        model_path = os.path.join(pwd, use_model)
+        yolo = YOLO(model_path)
+
+    # 再学習する場合
+    else:
+        yolo = YOLO(use_model)
+
     flag = True
     try:
         yolo.train(input_dir, output_dir, run_id, flag)
