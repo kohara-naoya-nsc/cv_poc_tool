@@ -8,10 +8,13 @@ scikit-image
 pyclipper
 lmdb
 tqdm
-numpy
+# PaddlePaddle 2.x requires the NumPy 1.x ABI.
+numpy==1.26.4
 rapidfuzz
-opencv-python
-opencv-contrib-python
+opencv-python==4.10.0.84
+opencv-contrib-python==4.10.0.84
+# Also constrain the OpenCV dependency installed by albumentations.
+opencv-python-headless==4.10.0.84
 cython
 Pillow
 # pyyaml
@@ -24,8 +27,9 @@ albumentations==1.4.10
 # to be compatible with albumentations
 albucore==0.0.13
 packaging
-paddlepaddle
-paddleocr
+# Supplied by the Docker base image; do not install the CPU package paddlepaddle.
+paddlepaddle-gpu==2.6.2.post120
+paddleocr==2.10.0
 
 # test requirements
 pytest
