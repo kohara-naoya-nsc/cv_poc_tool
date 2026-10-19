@@ -53,7 +53,7 @@ def random_shuffle(train_dir_path, df, upload_dir, annotation):
     # 画像とラベルのファイル名が一致することを確認
     paired_files = [img for img in image_files if any(img in path for path in images_names)]
 
-        # ファイルを各ディレクトリに移動
+    # ファイルを各ディレクトリに移動
     for img in tuple_list:
         if img[0] ==annotation:
             shutil.move(os.path.join(upload_dir, img[1]), os.path.join(train_dir_path, img[1]))
@@ -188,8 +188,7 @@ def patchcore():
     if start_button:
         # 画像をtrainとvalに分割する
         train_ratio = 70/100
-        
-        
+
         # ディレクトリ名に使用するフォーマット(yyyyMMddhhmmss)
         current_datetime = datetime.now()
         directory_name_format = "%Y%m%d_%H%M%S"
@@ -205,6 +204,11 @@ def patchcore():
         train_dir_path = os.path.join(parent_directory, train_directory_name)
         os.makedirs(train_dir_path, exist_ok=True)
         os.chmod(f'{parent_directory}/{run_id}', 0o777)
+
+        ####################################
+        # CSVのラベルに基づく画像の選別・移動
+        ####################################
+        # LabelStadioFormatの場合
         if img_toggle == "LabelStadioFormat":
             if files_path is not None:
                 with TemporaryDirectory() as temp_dir:
@@ -219,6 +223,8 @@ def patchcore():
                                                 target_file.write(file.read())
                         # ランダムシャッフルして分割する
                         random_shuffle(train_dir_path, df, temp_dir,annotation)
+
+        # Anotated Formatの場合
         elif img_toggle == "Anotated Format":
             if zip_path is not None:
                 with TemporaryDirectory() as temp_dir:
@@ -234,7 +240,6 @@ def patchcore():
                     move_file(train_dir_path, temp_dir)
 
         data_config ={
-            # "annotation": annotation,
             "device": device,
             "mode": mode,
             "batch": batch,
@@ -253,10 +258,17 @@ def patchcore():
         with open(data_yaml_path,"w") as f:
             yaml.dump(data_config,f)
 
-        data = { "run_id": f"{run_id}"}
+        #################
+        # FaseAPI にpost
+        #################
+        data = {"run_id": f"{run_id}"}
         with st.spinner("異常検知の学習を行っています..."):
             response=requests.post("http://patchcore:82/train/",data=data)
 
+
+        #######################
+        # 応答結果に処理の分岐
+        #######################
         if response.status_code == 200:
             st.write("学習完了")
             folder_path = f"{parent_directory }{run_id}/result_data"
@@ -276,6 +288,10 @@ def patchcore():
             st.error("予期せぬエラーが発生しました。")
             st.error("表示されているエラーメッセージをコピーのうえ、サポート窓口までご連絡ください。")
 
+
+    #######################
+    # 学習結果のダウンロード
+    #######################
     if st.session_state.zip_data and st.session_state.zip_filename and st.session_state.view and st.session_state.run_id:
         run_id=st.session_state.run_id
         st.download_button(
