@@ -25,8 +25,6 @@ def on_download_click(parent_directory,run_id):
 
 def para_change():
     """パラメータ初期化"""
-    # print("初期化開始")
-    # st.session_state.clear()
     st.session_state['selection_device'] = "GPU"
     st.session_state['device'] = "0"
     st.session_state['degrees'] = 0.0
@@ -98,18 +96,24 @@ def object_detection():
 
     # 再学習の場合
     if selection_model == "再学習" :
+        resume = True
         st.markdown("###### モデルをアップロードしてください(yyyymmdd_HHMMSS_モデル名.pt)")
         multi_mdl = '''*注：日本語を含むファイルはアップロードしないでください。
              *対応する形式：.pt
         '''
         st.markdown(multi_mdl)
 
-        model_path = st.file_uploader('import model(yyyymmdd_HHMMSS_モデル名.ptをアップロードしてください)', type=['pt'], label_visibility="hidden")
+        model_path = st.file_uploader(
+            'import model(yyyymmdd_HHMMSS_モデル名.ptをアップロードしてください)',
+            type=['pt'],
+            label_visibility="hidden"
+            )
         if model_path :
             use_model = f"{model_path.name}"
 
     # １から学習の場合
     elif selection_model == "１から学習":
+        resume = False
         select_model = st.selectbox(
             "デフォルトのモデルを選択してください。",
                 (
@@ -121,7 +125,6 @@ def object_detection():
                 )
             )
         use_model = f"{select_model.rsplit('(',1)[0]}"
-        path=f"models/{use_model}"
     st.write("\n\n\n")
 
 
@@ -214,14 +217,15 @@ def object_detection():
         os.makedirs(train_dir_path, exist_ok=True)
         os.chmod(f'{parent_directory}/{run_id}', 0o777)
         os.makedirs(val_dir_path, exist_ok=True)
-        save_path=os.path.join(yaml_dir_path,use_model)
+        save_path=os.path.join(yaml_dir_path, use_model)
         
         if selection_model == "再学習" :
             with open(save_path,"wb") as f:
                 f.write(model_path.getbuffer())
-        if selection_model == "１から学習":
-            # shutil.copy(path,yaml_dir_path)
-            yaml_dir_path = path
+                use_model = save_path
+
+        # if selection_model == "１から学習":
+        #     # shutil.copy(path,yaml_dir_path)
 
         ###################################################        
         # データセットを学習用（train）と検証用（val）に分割する
@@ -256,7 +260,11 @@ def object_detection():
         #################
         with st.spinner("物体検出の学習を行っています..."):
             dtc_create_yaml(train_dir_path, val_dir_path, yaml_dir_path, decode_text,epochs,batch,save,cache, device, workers, hsv_h, hsv_s, hsv_v, degree_val, flipud, fliplr, result_name, run_id,translate,scale,shear,perspective,mosaic,mixup,copy_paste)
-            data = { "run_id": f"{run_id}"}
+            data = {
+                "run_id": f"{run_id}",
+                "resume": f"{resume}",
+                "use_model": f"{use_model}",
+                }
             response=requests.post("http://yolo:81/train/",data=data)
 
 
@@ -266,7 +274,8 @@ def object_detection():
         if response.status_code == 200:
             st.write("学習完了")
 
-            folder_path = f"{parent_directory }{run_id}/result_data/{run_id}_{os.path.basename(use_model)}_学習結果"
+            model_name = os.path.splitext(os.path.basename(use_model))[0]
+            folder_path = os.path.join(parent_directory, run_id, "result_data", f"{run_id}_{model_name}_学習結果")
             zip_path = f"{current_datetime.strftime(directory_name_format)}_{os.path.basename(use_model)}_学習結果.zip"
             shutil.make_archive(zip_path.replace('.zip', ''), 'zip', folder_path)
             with open(zip_path, 'rb') as f:
