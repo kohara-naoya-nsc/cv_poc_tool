@@ -1,7 +1,7 @@
 # paddle ocrを用いてスラブの文字認識を行う
 
 from paddleocr import PaddleOCR
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import numpy as np
 import cv2
 import os
@@ -41,9 +41,6 @@ def custom_draw_ocr(image, boxes, txts=None, scores=None, font_path='simfang.ttf
     if isinstance(image, np.ndarray):
         image = Image.fromarray(image)
     draw = ImageDraw.Draw(image)
-    
-    # フォントをロード
-    font = ImageFont.truetype(font_path, font_size, encoding="utf-8")
     
     # バウンディングボックスを描画
     for box, score in zip(boxes, scores):
@@ -103,11 +100,11 @@ def draw_csv(ndarray, result, filename, csv_path, font_path):
         return im_show
     except Exception as e:
             print(f"####drow_csv{e}####")
+            raise
 
 
 
 def paddleocr_main(input_dir, output_dir, run_id):
-# if __name__ == '__main__':
 
     src_dir = input_dir
     dst_dir = output_dir
