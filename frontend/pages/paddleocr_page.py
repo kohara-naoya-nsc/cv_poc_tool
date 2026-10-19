@@ -74,7 +74,7 @@ def paddleocr_pre():
     # オプション
     ############
     with st.expander("オプション"):
-        lang_options = ["en", "ja"]
+        lang_options = ["en", "japan"]
         lang = st.selectbox("言語選択", lang_options, index=lang_options.index("en"), key="lang")
     
     with st.expander("高度なオプション"):
