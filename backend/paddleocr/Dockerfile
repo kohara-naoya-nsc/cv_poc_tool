@@ -1,5 +1,5 @@
-
-FROM paddlepaddle/paddle:3.0.0-gpu-cuda12.6-cudnn9.5-trt10.5
+# Match PaddleOCR 2.x with PaddlePaddle 2.6.2 and its CUDA/cuDNN runtime.
+FROM paddlepaddle/paddle:2.6.2-gpu-cuda12.0-cudnn8.9-trt8.6
 
 # アプリケーションファイルを配置するディレクトリに移動
 WORKDIR /app
@@ -27,7 +27,7 @@ RUN --mount=type=cache,target=${PIP_CACHE_DIR},sharing=locked \
     pip3 install -r requirements.txt
 
 # 公式リポジトリをクローン
-RUN git clone https://github.com/PaddlePaddle/PaddleOCR.git
+RUN git clone --depth 1 --branch v2.10.0 https://github.com/PaddlePaddle/PaddleOCR.git
 
 # PaddleOCRのモデルをダウンロード
 COPY model.py .
