@@ -29,8 +29,14 @@ if __name__ == "__main__":
     model_names = [
         'yolov8n.pt',
         'yolov8m.pt',
+        'yolov8s.pt',
+        'yolov8l.pt',
+        'yolov8x.pt',
         'yolov8n-cls.pt',
         'yolov8m-cls.pt',
+        'yolov8s-cls.pt',
+        'yolov8l-cls.pt',
+        'yolov8x-cls.pt',
     ]
 
     for model_name in model_names:
