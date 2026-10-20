@@ -52,7 +52,7 @@ def dtc_create_yaml(img_dir_path, val_dir_path, yaml_dir_path,class_text,epochs,
         "train": "train/images",
         "val": "val/images",
         "nc": line_count,
-        "name": filter_lines,
+        "names": filter_lines,
     }
     yaml_para ={
         "epochs": epochs,
