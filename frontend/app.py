@@ -1,6 +1,7 @@
 import streamlit as st  
 
-# 学習推論のページ
+# 学習・推論のページ
+# 画像解析Pocツールのページ
 from pages.home_page import home_page
 from pages.Object_Detection_page import object_detection
 from pages.Image_Classification_page import image_classification
@@ -9,6 +10,10 @@ from pages.Patchcore_Prediction_page import patchcore_prediction
 from pages.Object_Prediction_page import object_prediction
 from pages.Image_Classification_Prediction_page import image_classification_prediction
 from pages.paddleocr_page import paddleocr_pre
+
+# 画像認識FWのページ
+from pages.Object_Detection_YOLOX_page import object_detection_yolox
+from pages.Object_Prediction_YOLOX_page import object_prediction_yolox
 # toolのページ
 from pages.tool_reshape_app import tool_reshape_app
 from pages.tool_capture_app import tool_capture_app
@@ -68,5 +73,7 @@ app.add_app("【物体検出】推論", object_prediction)
 app.add_app("【異常検知】学習", patchcore)
 app.add_app("【異常検知】推論", patchcore_prediction)
 app.add_app("【文字認識】推論", paddleocr_pre)
+app.add_app("【物体検出(YOLOX)】学習", object_detection_yolox)
+app.add_app("【物体検出(YOLOX)】推論", object_prediction_yolox)
 
 app.run()
