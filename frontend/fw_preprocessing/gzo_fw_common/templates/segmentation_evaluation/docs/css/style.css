@@ -1,0 +1,207 @@
+/* ナビゲーション */
+.navbar {
+    padding: 0 10px 0 10px;
+
+}
+
+.navbar-nav {
+    flex-direction: row;
+}
+
+.nav-item {
+    font-size: 0.9rem;
+    padding: 0 10px 0 10px;
+}
+
+.nav-link {
+    padding: 5px 0;
+}
+
+.nav-link:hover {
+    text-decoration: underline;
+}
+
+.navbar-nav .active {
+    background-color: #4f5b64;
+    border-radius: 5px 5px 0 0;
+}
+
+/* テーブル全般 */
+
+.table-box {
+    margin: 2px 5px 2px 5px;
+}
+
+.table th {
+    padding: 2px 15px 2px 5px;
+    color: white;
+    font-size: small;
+    background-color: #343a40;
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 2px;
+    background-color: white;
+}
+
+.table tfoot {
+    border-top: solid #cfcfcf 2px;
+}
+
+.table tr:nth-of-type(2n) td {
+    background-color: #f9f9f9;
+}
+
+.table tr:hover td {
+    background-color: #dce4f1;
+}
+
+.sticky-table th {
+    position: sticky;
+    top: 0;
+}
+
+/* 基本情報・用語集テーブル */
+
+#information_table h3 {
+    margin: 5px;
+}
+
+#information_table p {
+    margin: 5px;
+}
+
+.information-table {
+    margin: 5px;
+    width: 99vw;
+}
+
+.information-table td {
+    padding: 0 20px 0 5px;
+}
+
+.information-table th {
+    font-size: medium;
+    font-weight: normal;
+    width: 180px;
+}
+
+/* 用語集テーブル */
+
+.glossary-table thead th {
+    width: auto;
+}
+
+.glossary-table tbody th {
+    max-width: 200px;
+    background-color: #565d63;
+}
+
+.glossary-table tbody td {
+    min-width: 70px;
+}
+
+/* 結果一覧テーブル */
+
+.centered_block {
+    text-align: center;
+}
+
+.text_data {
+    text-align: center;
+}
+
+.float_data {
+    padding: 0 0 0 5px;
+}
+
+.label_data {
+    font-size: large;
+}
+
+.text_black {
+    color: black;
+    font-weight: bold;
+}
+
+.text_red {
+    color: red;
+    font-weight: bold;
+}
+
+.text_blue {
+    color: blue;
+    font-weight: bold;
+}
+
+.text_green {
+    color: #00ad00;
+    font-weight: bold;
+}
+
+.object-image {
+    height: 100px;
+    width: auto;
+}
+
+.image_url {
+    padding: 0 0 0 5px;
+}
+
+/* ページネーション */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.pagination li {
+    text-align: center;
+    padding: 5px 0 5px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    min-width: 30px;
+    cursor: pointer;
+}
+
+.pagination li.active {
+    background-color: dodgerblue;
+    color: white;
+    font-weight: bold;
+}
+
+.pagination li:first-of-type,
+.pagination li:nth-of-type(2),
+.pagination li:last-of-type,
+.pagination li:nth-last-of-type(2) {
+    background-color: white;
+    color: black;
+    font-weight: normal;
+}
+
+/* ページサイズセレクター */
+
+.pagesize_selector {
+    font-size: small;
+    display: flex;
+    justify-content: flex-end;
+    border-collapse: collapse;
+}
+
+.pagesize_selector_box {
+    display: flex;
+    align-items: center;
+}
+
+/* 凡例 */
+
+.legend {
+    padding: 10px;
+}
+
+.legend p {
+    font-size: small;
+    margin: 0;
+}

@@ -5,3 +5,6 @@ opencv-python
 PyYAML
 requests
 numpy
+
+lxml
+Pillow

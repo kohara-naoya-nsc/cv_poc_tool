@@ -100,7 +100,7 @@ def image_classification_tf2():
             input_path = Path(share_path, "input")
             os.makedirs(input_path)
 
-            # データセットを一時ディレクトリ内で解答
+            # データセットを一時ディレクトリ内で解凍
             with TemporaryDirectory() as tmp_dir:
                 # 一時ディレクトリ内にデータセットを保存
                 dataset_name = train_object.name

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <link rel="stylesheet" href="./css/datatable-bootstrap.min.css">
+    <link rel="stylesheet" href="./css/style.css">
+    <title>全体評価画面</title>
+</head>
+
+<body>
+    <div id="result_summary_table">
+        <header>
+            <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="./index.html">基本情報</a></li>
+                    <li class="nav-item"><a class="nav-link" href="./result_list.html">結果一覧</a></li>
+                    <li class="nav-item active"><a class="nav-link" href="./result_summary.html">全体評価</a></li>
+                </ul>
+            </nav>
+        </header>
+        <main>
+            <div class="table-box">
+                <table class="table table-bordered sticky-table">
+                    <thead class="result_table_head">
+                        <tr>
+                            <th>No.</th>
+                            <th>クラス名</th>
+                            <th>平均スコア</th>
+                            <th>推論オブジェクト数</th>
+                        </tr>
+                    </thead>
+                    <tbody class="result_table_body">
+                        <tr v-for="item in computed_list">
+                            <td>
+                                <div class="text_data">{{item.index}}</div>
+                            </td>
+                            <td>
+                                <div class="text_data">{{item.class_name}}</div>
+                            </td>
+                            <td>
+                                <div class="float_data">{{item.avg_score_pred}}</div>
+                            </td>
+                            <td>
+                                <div class="float_data">{{item.object_count_pred}}</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script type="text/javascript" src="./js/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="./js/vue.js"></script>
+    <script type="text/javascript" src="./js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="./js/datatable.min.js"></script>
+    <script type="text/javascript" src="./js/datatable.jquery.min.js"></script>
+    <script type="text/javascript" src="./js/script.js"></script>
+    <script type="text/javascript" src="./results/result_data.js"></script>
+    <script type="text/javascript" src="./js/result_summary.js"></script>
+</body>
+
+</html>

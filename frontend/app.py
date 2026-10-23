@@ -12,6 +12,7 @@ from pages.Image_Classification_Prediction_page import image_classification_pred
 from pages.paddleocr_page import paddleocr_pre
 
 # 画像認識FWのページ
+from pages.tool_gzo_fw import tool_gzo_fw
 from pages.Object_Detection_YOLOX_page import object_detection_yolox
 from pages.Object_Prediction_YOLOX_page import object_prediction_yolox
 from pages.Image_Classification_TF2_page import image_classification_tf2
@@ -76,6 +77,7 @@ app.add_app("【物体検出】推論", object_prediction)
 app.add_app("【異常検知】学習", patchcore)
 app.add_app("【異常検知】推論", patchcore_prediction)
 app.add_app("【文字認識】推論", paddleocr_pre)
+app.add_app("【前処理】画像認識FW", tool_gzo_fw)
 app.add_app("【物体検出(YOLOX)】学習", object_detection_yolox)
 app.add_app("【物体検出(YOLOX)】推論", object_prediction_yolox)
 app.add_app("【画像分類(TF2)】学習", image_classification_tf2)

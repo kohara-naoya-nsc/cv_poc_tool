@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <link rel="stylesheet" href="./css/datatable-bootstrap.min.css">
+    <link rel="stylesheet" href="./css/style.css">
+    <title>基本情報画面</title>
+</head>
+
+<body>
+    <div id=information_table>
+        <header>
+            <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+                <ul class="navbar-nav">
+                    <li class="nav-item active"><a class="nav-link" href="./index.html">基本情報</a></li>
+                    <li class="nav-item"><a class="nav-link" href="./result_list.html">結果一覧</a></li>
+                    <li class="nav-item"><a class="nav-link" href="./result_summary.html">全体評価</a></li>
+                </ul>
+            </nav>
+        </header>
+        <main>
+            <div>
+                <h3>基本情報</h3>
+                <table class="table table-bordered information-table">
+                    <tr>
+                        <th>{{translation.prediction_id}}</th>
+                        <td>{{information.prediction_id}}</td>
+                    </tr>
+                    <tr>
+                        <th>{{translation.dataset_id}}</th>
+                        <td>{{information.dataset_id}}</td>
+                    </tr>
+                </table>
+            </div>
+            <div>
+                <h3>用語集</h3>
+                <p>詳細な説明は画像認識FWのマニュアルを参照してください。</p>
+                <table class="table table-bordered information-table glossary-table">
+                    <thead>
+                        <th>用語</th>
+                        <th>説明（簡易）</th>
+                        <th>評価値の見方</th>
+                        <th>範囲</th>
+                    </thead>
+                    <tbody>
+                        <tr v-for="value in glossary">
+                            <th>{{value.word}}</th>
+                            <td>{{value.brief_description}}</td>
+                            <td>{{value.how_to_use}}</td>
+                            <td>{{value.range}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script type="text/javascript" src="./js/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="./js/vue.js"></script>
+    <script type="text/javascript" src="./js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="./js/script.js"></script>
+    <script type="text/javascript" src="./results/result_data.js"></script>
+    <script type="text/javascript" src="./js/common.js"></script>
+    <script type="text/javascript" src="./js/index.js"></script>
+</body>
+
+</html>
