@@ -34,60 +34,119 @@ class MultiApp:
     def __init__(self):
         self.apps = []
 
-    def add_app(self, title, func):
-        self.apps.append({"title": title, "function": func})
+    def add_app(self, title, func, category, subcategory=None):
+        self.apps.append({
+            "id": f"page_{len(self.apps)}",
+            "title": title,
+            "function": func,
+            "category": category,
+            "subcategory": subcategory,
+        })
 
     def run(self):
         st.sidebar.markdown("## メインメニュー")
         st.sidebar.markdown("ページを選択してください:")
 
-        # サイドバーにボタンを配置
-        for app in self.apps:
-            if st.sidebar.button(app["title"], key=app["title"]):
-                st.session_state.current_page = app["title"]
-        
-        st.sidebar.markdown("---")
-
-        st.sidebar.markdown(
-            f'<a href="http://0.0.0.0:8080" target="_blank" style="color: blue; text-decoration: underline;">【領域検出】推論</a>',
-            unsafe_allow_html=True
-        )
-        st.sidebar.markdown(
-            f'<a href="http://0.0.0.0:8080" target="_blank" style="color: blue; text-decoration: underline;">【データセット作成】画像分類</a>',
-            unsafe_allow_html=True
-        )
-        st.sidebar.markdown(
-            f'<a href="http://0.0.0.0:8080" target="_blank" style="color: blue; text-decoration: underline;">【データセット作成】物体検出</a>',
-            unsafe_allow_html=True
-        )
-
         # 現在のページをセッション状態で管理
         if 'current_page' not in st.session_state:
-            st.session_state.current_page = self.apps[0]["title"]
+            st.session_state.current_page = self.apps[0]["id"]
+        elif not any(
+            app["id"] == st.session_state.current_page for app in self.apps
+        ):
+            previous_page = next(
+                (
+                    app for app in self.apps
+                    if app["title"] == st.session_state.current_page
+                ),
+                self.apps[0],
+            )
+            st.session_state.current_page = previous_page["id"]
+
+        home_app = next(app for app in self.apps if app["category"] == "ホーム")
+        if st.sidebar.button(home_app["title"], key=home_app["id"]):
+            st.session_state.current_page = home_app["id"]
+
+        categories = dict.fromkeys(
+            app["category"] for app in self.apps if app["category"] != "ホーム"
+        )
+        for category in categories:
+            category_apps = [app for app in self.apps if app["category"] == category]
+            is_current_category = any(
+                app["id"] == st.session_state.current_page
+                for app in category_apps
+            )
+            with st.sidebar.expander(category, expanded=is_current_category):
+                subcategories = dict.fromkeys(
+                    app["subcategory"]
+                    for app in category_apps
+                    if app["subcategory"] is not None
+                )
+                if subcategories:
+                    for subcategory in subcategories:
+                        subcategory_apps = [
+                            app for app in category_apps
+                            if app["subcategory"] == subcategory
+                        ]
+                        is_current_subcategory = any(
+                            app["id"] == st.session_state.current_page
+                            for app in subcategory_apps
+                        )
+                        with st.expander(
+                            subcategory, expanded=is_current_subcategory
+                        ):
+                            for app in subcategory_apps:
+                                if st.button(app["title"], key=app["id"]):
+                                    st.session_state.current_page = app["id"]
+                else:
+                    for app in category_apps:
+                        if st.button(app["title"], key=app["id"]):
+                            st.session_state.current_page = app["id"]
+
+        st.sidebar.markdown("---")
+        st.sidebar.markdown(
+            '<a href="http://0.0.0.0:8080" target="_blank" style="color: blue; text-decoration: underline;">【領域検出】推論</a>',
+            unsafe_allow_html=True
+        )
+        st.sidebar.markdown(
+            '<a href="http://0.0.0.0:8080" target="_blank" style="color: blue; text-decoration: underline;">【データセット作成】画像分類</a>',
+            unsafe_allow_html=True
+        )
+        st.sidebar.markdown(
+            '<a href="http://0.0.0.0:8080" target="_blank" style="color: blue; text-decoration: underline;">【データセット作成】物体検出</a>',
+            unsafe_allow_html=True
+        )
 
         # 選択されたページを実行
         for app in self.apps:
-            if app["title"] == st.session_state.current_page:
+            if app["id"] == st.session_state.current_page:
                 app["function"]()
                 break
 
 
 # メインアプリケーションの構築
 app = MultiApp()
-app.add_app("ホームページ", home_page)
-app.add_app("【前処理】射影変換(画角補正)", tool_reshape_app)
-app.add_app("【前処理】動画→画像変換", tool_capture_app)
-app.add_app("【画像分類】学習", image_classification)
-app.add_app("【画像分類】推論", image_classification_prediction)
-app.add_app("【物体検出】学習", object_detection)
-app.add_app("【物体検出】推論", object_prediction)
-app.add_app("【異常検知】学習", patchcore)
-app.add_app("【異常検知】推論", patchcore_prediction)
-app.add_app("【文字認識】推論", paddleocr_pre)
-app.add_app("【前処理】画像認識FW", tool_gzo_fw)
-app.add_app("【物体検出(YOLOX)】学習", object_detection_yolox)
-app.add_app("【物体検出(YOLOX)】推論", object_prediction_yolox)
-app.add_app("【画像分類(TF2)】学習", image_classification_tf2)
-app.add_app("【画像分類(TF2)】推論", image_classification_prediction_tf2)
+app.add_app("ホームページ", home_page, "ホーム")
+app.add_app("射影変換(画角補正)", tool_reshape_app, "前処理")
+app.add_app("動画→画像変換", tool_capture_app, "前処理")
+app.add_app("データ変換", tool_gzo_fw, "前処理")
+
+app.add_app("学習", image_classification, "画像分類", "YOLOv8")
+app.add_app("推論", image_classification_prediction, "画像分類", "YOLOv8")
+app.add_app("学習", image_classification_tf2, "画像分類", "VGG")
+app.add_app("推論", image_classification_prediction_tf2, "画像分類", "VGG")
+
+app.add_app("学習", object_detection, "物体検出", "YOLOv8")
+app.add_app("推論", object_prediction, "物体検出", "YOLOv8")
+app.add_app("学習", object_detection_yolox, "物体検出", "YOLOX")
+app.add_app("推論", object_prediction_yolox, "物体検出", "YOLOX")
+
+app.add_app("学習", patchcore, "異常検知", "Wide-ResNet-50-2")
+app.add_app("推論", patchcore_prediction, "異常検知", "Wide-ResNet-50-2")
+
+app.add_app("学習", semantic_segmentation, "領域検知", "HRNet")
+app.add_app("推論", segmentation_prediction, "領域検知", "HRNet")
+
+app.add_app("推論", paddleocr_pre, "文字認識")
+
 
 app.run()
