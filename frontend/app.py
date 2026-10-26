@@ -105,10 +105,13 @@ app.add_app("推論", object_prediction, "画像解析PoCツール", "物体検�
 app.add_app("学習", patchcore, "画像解析PoCツール", "異常検知")
 app.add_app("推論", patchcore_prediction, "画像解析PoCツール", "異常検知")
 app.add_app("推論", paddleocr_pre, "画像解析PoCツール", "文字認識")
+
 app.add_app("データセット変換", tool_gzo_fw, "画像認識FW", "前処理")
 app.add_app("学習", object_detection_yolox, "画像認識FW", "物体検出")
 app.add_app("推論", object_prediction_yolox, "画像認識FW", "物体検出")
 app.add_app("学習", image_classification_tf2, "画像認識FW", "画像分類")
 app.add_app("推論", image_classification_prediction_tf2, "画像認識FW", "画像分類")
+app.add_app("学習", semantic_segmentation, "画像認識FW", "領域検知")
+app.add_app("推論", segmentation_prediction, "画像認識FW", "領域検知")
 
 app.run()
