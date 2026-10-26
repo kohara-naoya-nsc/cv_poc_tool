@@ -40,7 +40,7 @@ def parameter_reset():
 def segmentation_prediction():
     """セマンティックセグメンテーションの予測を実行する関数"""
 
-    st.title("領域検知：推論ページ")
+    st.title("【推論】領域検出")
 
     # データセットのアップロード
     prediction_object = st.file_uploader(

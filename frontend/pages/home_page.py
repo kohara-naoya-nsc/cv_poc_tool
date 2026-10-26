@@ -27,4 +27,9 @@ def home_page():
             unsafe_allow_html=True
         )
 
+    st.markdown(
+        '<a href="https://dev.azure.com/nsdig01/ISTD_ImageProcessingAI_PoC_Tools/_git/azure-cv_poc_tool?path=/cv_poc_tool/backend/yolo" target="_blank" style="color: blue; text-decoration: underline;">YOLOv8 ソースコード</a>',
+        unsafe_allow_html=True
+    )
+
 
