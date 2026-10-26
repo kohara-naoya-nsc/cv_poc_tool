@@ -50,7 +50,7 @@ def object_prediction_yolox():
     #####################
     # 画面 UI
     #####################
-    st.title("【推論】物体検出（YOLOX.ver）")
+    st.title("【推論】物体検出")
 
     # 推論する対象の選択
     demo_options = ["動画", "画像"]

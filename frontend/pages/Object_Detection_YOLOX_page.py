@@ -75,7 +75,7 @@ def object_detection_yolox():
     ######################
     # 画面 UI の表示
     ######################
-    st.title("【学習】物体検出（YOLOX.ver）")
+    st.title("【学習】物体検出")
 
     st.markdown("##### zipファイルをアップロードしてください")
 

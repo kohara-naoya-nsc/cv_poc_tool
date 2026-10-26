@@ -43,7 +43,7 @@ def parameter_reset():
 def image_classification_tf2():
     """画像分類：VGG学習ページ"""
 
-    st.title("画像分類：VGG学習")
+    st.title("【学習】画像分類")
 
     # データセットのアップロード
     train_object = st.file_uploader(

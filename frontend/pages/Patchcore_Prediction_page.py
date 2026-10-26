@@ -44,7 +44,7 @@ def on_download_click(parent_directory,run_id):
 
 def patchcore_prediction():
 
-    st.title("【推論】異常検出")
+    st.title("【推論】異常検知")
     if'zip_data' not in st.session_state:
         st.session_state.zip_data=None
     if'zip_filename' not in st.session_state:

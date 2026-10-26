@@ -43,7 +43,7 @@ def parameter_reset():
 def semantic_segmentation():
     """領域検知：学習ページ"""
     
-    st.title("領域検知：学習ページ")
+    st.title("【学習】領域検出")
 
 
     # データセットのアップロード

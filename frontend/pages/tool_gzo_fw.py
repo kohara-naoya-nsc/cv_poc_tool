@@ -50,7 +50,7 @@ def parameter_reset():
 def tool_gzo_fw():
     """前処理：画像認識FW"""
 
-    st.title("前処理：画像認識FW")
+    st.title("【前処理】データセット変換")
     share_path = st.session_state.get("share_path")
     uuid_num = st.session_state.get("share_uuid")
 
