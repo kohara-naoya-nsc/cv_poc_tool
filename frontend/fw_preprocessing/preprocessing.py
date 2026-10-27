@@ -1854,4 +1854,4 @@ def data_prep(
         logger.exception("data prep error: {}".format(e))
         # mlflow.log_artifacts(str(kqi_output_dir_path))
         # mlflow.log_artifacts(str(preped_dataset_dir_path))
-        sys.exit(1)
+        raise
