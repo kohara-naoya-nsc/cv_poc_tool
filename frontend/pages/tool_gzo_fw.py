@@ -6,7 +6,7 @@ from pathlib import Path
 from zipfile import ZipFile
 from tempfile import TemporaryDirectory
 
-# from fw_preprocessing.preprocessing import data_prep
+from fw_preprocessing.preprocessing import data_prep
 
 
 ########################
@@ -164,45 +164,44 @@ def tool_gzo_fw():
         #####################
         # 前処理の実行
         #####################
-        # try:
-        #     data_prep(
-        #     input_path,
-        #     None,
-        #     dataset_format,
-        #     prep_mode,
-        #     train_data_ratio,
-        #     valid_data_ratio,
-        #     test_data_ratio,
-        #     contrast_augmentation_probability,
-        #     blur_augmentation_probability,
-        #     histogram_augmentation_probability,
-        #     gauss_noise_augmentation_probability,
-        #     salt_augmentation_probability,
-        #     flip_augmentation_probability,
-        #     rotate_augmentation_probability,
-        #     rotate_augmentation_degree,
-        #     output_path,
-        #     )
-        # except:
-        #     st.error("前処理に失敗しました")
-        #     st.stop()
+        try:
+            data_prep(
+                input_path,
+                dataset_format,
+                prep_mode,
+                train_data_ratio,
+                valid_data_ratio,
+                test_data_ratio,
+                contrast_augmentation_probability,
+                blur_augmentation_probability,
+                histogram_augmentation_probability,
+                gauss_noise_augmentation_probability,
+                salt_augmentation_probability,
+                flip_augmentation_probability,
+                rotate_augmentation_probability,
+                rotate_augmentation_degree,
+                output_path,
+            )
+        except Exception as error:
+            st.exception(error)
+            st.stop()
 
 
-    ###########################
-    # 前処理結果のダウンロード
-    ###########################
-    # 学習結果の存在確認
-    # output_pth = Path(share_path, "output")
-    # if not os.path.exists(output_pth):
-    #     st.error(f"学習結果がありません")
-    # else:
-    #     # 学習結果をzipファイルに圧縮してダウンロード用に提供
-    #     output_zip = shutil.make_archive(output_pth, format='zip', root_dir=str(output_pth))
-    #     with open(output_zip, "rb") as f:
-    #         st.download_button(
-    #             label="学習結果のダウンロード",
-    #             data=f.read(),
-    #             file_name=f"{uuid_num}_vgg16_weights_tf_dim_ordering_tf_kernels_notop_学習結果.zip",
-    #             mime="application/zip",
-    #             on_click=lambda:on_download_click(share_path),
-    #         )
+        ###########################
+        # 前処理結果のダウンロード
+        ###########################
+        # 学習結果の存在確認
+        output_pth = Path(share_path, "output")
+        if not os.path.exists(output_pth):
+            st.error(f"学習結果がありません")
+        else:
+            # 学習結果をzipファイルに圧縮してダウンロード用に提供
+            output_zip = shutil.make_archive(output_pth, format='zip', root_dir=str(output_pth))
+            with open(output_zip, "rb") as f:
+                st.download_button(
+                    label="学習結果のダウンロード",
+                    data=f.read(),
+                    file_name=f"{uuid_num}_vgg16_weights_tf_dim_ordering_tf_kernels_notop_学習結果.zip",
+                    mime="application/zip",
+                    on_click=lambda:on_download_click(share_path),
+                )
