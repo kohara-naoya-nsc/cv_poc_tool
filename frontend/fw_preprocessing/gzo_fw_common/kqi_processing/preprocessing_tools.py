@@ -18,15 +18,15 @@ import shutil
 import cv2
 import pandas as pd
 import numpy as np
-import mltable
+# import mltable
 from PIL import Image
 from math import ceil, floor
 from xml.etree import ElementTree
 from decimal import Decimal, getcontext, ROUND_HALF_UP, InvalidOperation
 from logging import getLogger
 from lxml.etree import Element, SubElement, tostring
-from gzo_fw_common.common.common_tools import load_common_config
-from gzo_fw_common.common.gzo_fw_exception import ImageReadError, RatioValueError
+from fw_preprocessing.gzo_fw_common.common.common_tools import load_common_config
+from fw_preprocessing.gzo_fw_common.common.gzo_fw_exception import ImageReadError, RatioValueError
 
 # 定数
 # 該当要素が存在しないに代入する文字列
