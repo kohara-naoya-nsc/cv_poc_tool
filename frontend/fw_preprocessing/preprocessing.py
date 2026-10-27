@@ -1414,8 +1414,16 @@ def data_prep(
                 ) as f:
                     f.writelines([p.stem + "\n" for p in test_image_path_list])
 
+
+        ###############################################
+        # Classification: folder-tree(directory) の場合
+        ###############################################
         elif dataset_format == "Classification: folder-tree(directory)":
             logger.info("dataset format: folder-tree")
+
+            ########################
+            # 分割先ディレクトリ作成
+            ########################
             os.makedirs(
                 str(preped_dataset_dir_path / "images" / "train"), exist_ok=True
             )
@@ -1426,6 +1434,10 @@ def data_prep(
                 str(preped_dataset_dir_path / "images" / "test"), exist_ok=True
             )
 
+
+            #######################################################
+            # 学習用データの画像増強と、生成画像を別の出力フォルダもコピー
+            #######################################################
             if len(train_image_path_list) > 0:
                 logger.info(
                     "train image augmentation. original {} images".format(
@@ -1440,11 +1452,6 @@ def data_prep(
                         str(preped_dataset_dir_path / "images" / "train"),
                     )
                 )
-                # mlflow.log_metric(
-                #     "学習(train)画像枚数",
-                #     len(train_image_path_list)
-                #     + len(augmented_train_image_path_list),
-                # )
                 for augmented_train_image_path in augmented_train_image_path_list:
                     shutil.copy(
                         str(augmented_train_image_path),
@@ -1454,6 +1461,10 @@ def data_prep(
                             / augmented_train_image_path.name
                         ),
                     )
+
+            #######################################################
+            # 検証用データの画像増強と、生成画像を別の出力フォルダもコピー
+            #######################################################
             if len(valid_image_path_list) > 0:
                 logger.info(
                     "valid image augmentation. original {} images".format(
@@ -1468,11 +1479,6 @@ def data_prep(
                         str(preped_dataset_dir_path / "images" / "valid"),
                     )
                 )
-                # mlflow.log_metric(
-                #     "検証(valid)画像枚数",
-                #     len(valid_image_path_list)
-                #     + len(augmented_valid_image_path_list),
-                # )
                 for augmented_valid_image_path in augmented_valid_image_path_list:
                     shutil.copy(
                         str(augmented_valid_image_path),
@@ -1483,7 +1489,10 @@ def data_prep(
                         ),
                     )
 
+
+            ###################
             # 元画像の移動
+            ###################
             for train_image_path in train_image_path_list:
                 train_image_output_dir_path = (
                     preped_dataset_dir_path
