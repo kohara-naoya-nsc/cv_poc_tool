@@ -13,7 +13,7 @@ import json
 import zipfile as zp
 import configparser
 from logging import getLogger
-from fw_preprocessing.gzo_fw_common.common.common_tools import load_common_config
+from gzo_fw_common.common.common_tools import load_common_config
 import time
 
 # 定数

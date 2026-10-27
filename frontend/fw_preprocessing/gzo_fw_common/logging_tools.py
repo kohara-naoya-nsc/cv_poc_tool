@@ -7,14 +7,14 @@
 ログ出力の共通処理
 
 """
-from fw_preprocessing.gzo_fw_common.kqi_processing import input_handler
+from gzo_fw_common.kqi_processing import input_handler
 import pathlib
 import logging
 import os
 from datetime import datetime
-from fw_preprocessing.gzo_fw_common.common.gzo_fw_exception import GetConfigException
+from gzo_fw_common.common.gzo_fw_exception import GetConfigException
 from logging.handlers import TimedRotatingFileHandler
-from fw_preprocessing.gzo_fw_common.common.common_tools import load_common_config
+from gzo_fw_common.common.common_tools import load_common_config
 
 
 # ログレベルの名称(String)とPython設定変数(int)のマッピング
