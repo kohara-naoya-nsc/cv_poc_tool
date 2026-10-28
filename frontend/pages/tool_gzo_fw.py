@@ -69,10 +69,10 @@ def tool_gzo_fw():
         )
 
     # データセットのアップロード
-    dataset_directory = st.file_uploader(
+    dataset_file = st.file_uploader(
         "対象データをアップロードしてください",
         type=["zip"],
-        key="dataset_directory",
+        key="dataset_file",
         )
 
 
@@ -116,7 +116,7 @@ def tool_gzo_fw():
     ##################################
     if start_button:
         # 必要ファイルの確認
-        if not dataset_directory:
+        if dataset_file is None:
             st.error("データセットをアップロードしてください")
             st.stop()
         
@@ -139,26 +139,26 @@ def tool_gzo_fw():
         ########################################
         # データセットを解凍後、共有ディレクトリに保存
         ########################################
-        input_path = Path(share_path, "input")
-        os.makedirs(input_path)
+        dataset_directory = Path(share_path, "dataset")
+        os.makedirs(dataset_directory)
 
         with TemporaryDirectory() as tmp_dir:
             # 一時ディレクトリ内にデータセットを保存
-            dataset_name = dataset_directory.name
+            dataset_name = dataset_file.name
             tmp_path = Path(tmp_dir, dataset_name)
             with open(tmp_path, "wb") as f:
-                f.write(dataset_directory.getbuffer())
+                f.write(dataset_file.getbuffer())
 
             # 一時ディレクトリ内のZIPファイルを解凍して入力ディレクトリに展開
             with ZipFile(tmp_path, "r") as zip_ref:
-                zip_ref.extractall(input_path)
+                zip_ref.extractall(dataset_directory)
 
 
         ######################################
         # 成果物格納ディレクトリの作成
         ######################################
-        output_path = Path(share_path, "output")
-        os.makedirs(output_path)
+        preped_dataset_directory = Path(share_path, "result")
+        os.makedirs(preped_dataset_directory)
 
 
         #####################
@@ -166,7 +166,7 @@ def tool_gzo_fw():
         #####################
         try:
             data_prep(
-                input_path,
+                dataset_directory,
                 dataset_format,
                 prep_mode,
                 train_data_ratio,
@@ -180,7 +180,7 @@ def tool_gzo_fw():
                 flip_augmentation_probability,
                 rotate_augmentation_probability,
                 rotate_augmentation_degree,
-                output_path,
+                preped_dataset_directory,
             )
         except Exception as error:
             st.exception(error)
@@ -190,18 +190,18 @@ def tool_gzo_fw():
         ###########################
         # 前処理結果のダウンロード
         ###########################
-        # 学習結果の存在確認
-        output_pth = Path(share_path, "output")
-        if not os.path.exists(output_pth):
-            st.error(f"学習結果がありません")
+        # 前処結果の存在確認
+        result_path = Path(share_path, "result")
+        if not os.path.exists(result_path):
+            st.error(f"前処理結果がありません")
         else:
             # 学習結果をzipファイルに圧縮してダウンロード用に提供
-            output_zip = shutil.make_archive(output_pth, format='zip', root_dir=str(output_pth))
+            output_zip = shutil.make_archive(result_path, format='zip', root_dir=str(result_path))
             with open(output_zip, "rb") as f:
                 st.download_button(
-                    label="学習結果のダウンロード",
+                    label="前処理結果のダウンロード",
                     data=f.read(),
-                    file_name=f"{uuid_num}_vgg16_weights_tf_dim_ordering_tf_kernels_notop_学習結果.zip",
+                    file_name=f"{uuid_num}_前処理結果.zip",
                     mime="application/zip",
                     on_click=lambda:on_download_click(share_path),
                 )
