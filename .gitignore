@@ -24,3 +24,6 @@ backend/yolo/yolov8n-cls.pt
 backend/yolo/Ultralytics/Arial.ttf
 backend/yolo/weights/yolo26n.pt
 backend/yolo/yolov8s.pt
+frontend/test.txt
+frontend/train.txt
+frontend/valid.txt
