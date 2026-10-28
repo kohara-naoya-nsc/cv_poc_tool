@@ -40,10 +40,11 @@ def parameter_reset():
         st.session_state[key] = value
 
 
-def semantic_segmentation():
+def semantic_segmentation(show_title=True):
     """領域検知：学習ページ"""
     
-    st.title("【学習】領域検出")
+    if show_title:
+        st.title("【学習】領域検出")
 
 
     # データセットのアップロード
@@ -150,7 +151,7 @@ def semantic_segmentation():
                 output_zip = shutil.make_archive(output_pth, format='zip', root_dir=str(output_pth))
                 with open(output_zip, "rb") as f:
                     st.download_button(
-                        label="学習結果のダウンロード",
+                        label="学習結果をダウンロード",
                         data=f.read(),
                         file_name=f"{uuid_num}_vgg16_weights_tf_dim_ordering_tf_kernels_notop_学習結果.zip",
                         mime="application/zip",

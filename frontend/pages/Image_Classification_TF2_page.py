@@ -40,10 +40,11 @@ def parameter_reset():
         st.session_state[key] = value
 
 
-def image_classification_tf2():
+def image_classification_tf2(show_title=True):
     """画像分類：VGG学習ページ"""
 
-    st.title("【学習】画像分類")
+    if show_title:
+        st.title("【学習】画像分類")
 
     # データセットのアップロード
     train_object = st.file_uploader(
@@ -152,7 +153,7 @@ def image_classification_tf2():
                 output_zip = shutil.make_archive(output_pth, format='zip', root_dir=str(output_pth))
                 with open(output_zip, "rb") as f:
                     st.download_button(
-                        label="学習結果のダウンロード",
+                        label="学習結果をダウンロード",
                         data=f.read(),
                         file_name=f"{uuid_num}_vgg16_weights_tf_dim_ordering_tf_kernels_notop_学習結果.zip",
                         mime="application/zip",

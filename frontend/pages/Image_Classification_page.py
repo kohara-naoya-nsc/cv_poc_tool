@@ -89,12 +89,13 @@ def para_change():
     st.session_state['copy_paste'] = 0.0
 
 
-def image_classification():
+def image_classification(show_title=True):
     """画像分類：学習ページ"""
 
     # 共有フォルダ
     parent_directory = "shared/train/"
-    st.title("【学習】画像分類")
+    if show_title:
+        st.title("【学習】画像分類")
 
     if'zip_data' not in st.session_state:
         st.session_state.zip_data=None
@@ -404,7 +405,7 @@ def image_classification():
     if st.session_state.zip_data and st.session_state.zip_filename and st.session_state.view and st.session_state.run_id:
         run_id=st.session_state.run_id
         st.download_button(
-                        label="画像分類の推論結果をダウンロード",
+                        label="画像分類の学習結果をダウンロード",
                         data=st.session_state.zip_data,
                         file_name=st.session_state.zip_filename,
                         mime='application/zip',

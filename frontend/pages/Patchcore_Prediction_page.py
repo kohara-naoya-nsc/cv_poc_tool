@@ -42,9 +42,10 @@ def on_download_click(parent_directory,run_id):
     shutil.rmtree(delete_path)
     st.session_state.view=False
 
-def patchcore_prediction():
+def patchcore_prediction(show_title=True):
 
-    st.title("【推論】異常検知")
+    if show_title:
+        st.title("【推論】異常検知")
     if'zip_data' not in st.session_state:
         st.session_state.zip_data=None
     if'zip_filename' not in st.session_state:
@@ -154,7 +155,7 @@ def patchcore_prediction():
         repo="models"
         n_neighbors = st.slider("n_neighbors:検索窓の大きさ", min_value=0, max_value=100, value=3, key="n_neighbors")
         sampling_ratio = st.slider("sampling_ratio:サンプリング率", min_value=0.00, max_value=1.00, value=0.01, key="sampling_ratio")
-        coef_sigma = st.slider("coef_sigma:閾値計算時のシグマ係数", min_value=0.0, max_value=20.0, value=5.0, key="coef_sigma")
+        coef_sigma = st.slider("coef_sigma:しきい値計算時のシグマ係数", min_value=0.0, max_value=20.0, value=5.0, key="coef_sigma")
         # contour = st.slider("contour:等高線マップの可視化", min_value=0.0, max_value=50.0, value=None, key="contour")
         contour_toggle = st.toggle("contour:等高線マップの可視化(OFFでヒートマップで出力)", False, key="contour_toggle")
         if contour_toggle :

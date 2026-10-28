@@ -69,13 +69,14 @@ def parameter_reset():
         st.session_state[key] = value
 
 
-def object_detection_yolox():
+def object_detection_yolox(show_title=True):
     """物体検出（YOLOX.ver）の学習画面を表示する関数"""
 
     ######################
     # 画面 UI の表示
     ######################
-    st.title("【学習】物体検出")
+    if show_title:
+        st.title("【学習】物体検出")
 
     st.markdown("##### zipファイルをアップロードしてください")
 
@@ -115,7 +116,7 @@ def object_detection_yolox():
         model_name = st.selectbox("デフォルトのモデルを選択してください", model_name_options, index=0, key="model_name")
 
         # 再学習するモデルをアップロード
-        st.markdown("##### モデルをアップロードしていください.pth")
+        st.markdown("##### モデルをアップロードしてください.pth")
         multi_dml = '''*注：日本語を含むファイルはアップロードしないでください。
         *対応する形式：.pth
         '''
@@ -367,7 +368,7 @@ def object_detection_yolox():
                 output_zip = shutil.make_archive(output_pth, format='zip', root_dir=str(output_pth))
                 with open(output_zip, "rb") as f:
                     st.download_button(
-                        label="学習結果のダウンロード",
+                        label="学習結果をダウンロード",
                         data=f.read(),
                         file_name=f"{model_name}_学習結果.zip",
                         mime="application/zip",

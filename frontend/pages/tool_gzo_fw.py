@@ -199,7 +199,7 @@ def tool_gzo_fw():
             output_zip = shutil.make_archive(result_path, format='zip', root_dir=str(result_path))
             with open(output_zip, "rb") as f:
                 st.download_button(
-                    label="前処理結果のダウンロード",
+                    label="前処理結果をダウンロード",
                     data=f.read(),
                     file_name=f"{uuid_num}_前処理結果.zip",
                     mime="application/zip",

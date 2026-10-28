@@ -37,10 +37,11 @@ def parameter_reset():
         st.session_state[key] = value
 
 
-def segmentation_prediction():
+def segmentation_prediction(show_title=True):
     """セマンティックセグメンテーションの予測を実行する関数"""
 
-    st.title("【推論】領域検出")
+    if show_title:
+        st.title("【推論】領域検出")
 
     # データセットのアップロード
     prediction_object = st.file_uploader(
@@ -57,7 +58,7 @@ def segmentation_prediction():
         format_opstions = ["EISeg", "LabelStudio"]
         st.selectbox("出力JSON形式", format_opstions, index=0, key="output_json_format")
         st.toggle("精度評価結果を出力", value=True, key="exists_answer")
-        st.slider("IoU閾値", min_value=0.0, max_value=1.0, value=0.5, key="iou_threshold")
+        st.slider("IoUしきい値", min_value=0.0, max_value=1.0, value=0.5, key="iou_threshold")
 
 
     ##########################################
@@ -75,7 +76,7 @@ def segmentation_prediction():
     ##################################
     if start_button:
         if prediction_object is None:
-            st.warning("学習用データセットをアップロードしてください")
+            st.warning("推論用データセットをアップロードしてください")
             st.stop()
 
         # UUIDの取得して共有フォルダのパスを作成
@@ -144,7 +145,7 @@ def segmentation_prediction():
                 output_zip = shutil.make_archive(output_pth, format='zip', root_dir=str(output_pth))
                 with open(output_zip, "rb") as f:
                     st.download_button(
-                        label="推論結果のダウンロード",
+                        label="推論結果をダウンロード",
                         data=f.read(),
                         file_name=f"{uuid_num}_vgg16_weights_tf_dim_ordering_tf_kernels_notop_学習結果.zip",
                         mime="application/zip",
