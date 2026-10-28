@@ -40,10 +40,11 @@ def parameter_reset():
         st.session_state[key] = value
 
 
-def semantic_segmentation():
+def semantic_segmentation(show_title=True):
     """領域検知：学習ページ"""
     
-    st.title("【学習】領域検出")
+    if show_title:
+        st.title("【学習】領域検出")
 
 
     # データセットのアップロード

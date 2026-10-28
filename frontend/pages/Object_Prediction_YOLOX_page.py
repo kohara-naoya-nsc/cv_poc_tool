@@ -44,13 +44,14 @@ def parameter_reset():
     for key, value in TARGET_KEYS.items():
         st.session_state[key] = value
 
-def object_prediction_yolox():
+def object_prediction_yolox(show_title=True):
     """物体検出（YOLOX.ver）の推論画面を表示する関数"""
 
     #####################
     # 画面 UI
     #####################
-    st.title("【推論】物体検出")
+    if show_title:
+        st.title("【推論】物体検出")
 
     # 推論する対象の選択
     demo_options = ["動画", "画像"]

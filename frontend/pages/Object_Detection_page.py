@@ -48,7 +48,7 @@ def para_change():
     st.session_state['mixup'] = 0.0
     st.session_state['copy_paste'] = 0.0
 
-def object_detection():
+def object_detection(show_title=True):
     """物体検出：学習ページ"""
 
     # 共有フォルダ
@@ -57,7 +57,8 @@ def object_detection():
     #########################
     # 画面UI
     #########################
-    st.title("【学習】物体検出")
+    if show_title:
+        st.title("【学習】物体検出")
 
     if'zip_data' not in st.session_state:
         st.session_state.zip_data=None

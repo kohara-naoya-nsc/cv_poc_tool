@@ -63,13 +63,14 @@ def move_file(train_dir_path, temp_dir):
     for file in os.listdir(temp_dir):
         shutil.move(os.path.join(temp_dir, file), os.path.join(train_dir_path, file))
 
-def patchcore():
+def patchcore(show_title=True):
     """異常検知：学習ページ"""
 
     # 共有ディレクトリ
     parent_directory = "shared/train/"
 
-    st.title("【学習】異常検知")
+    if show_title:
+        st.title("【学習】異常検知")
 
     if 'degrees' not in st.session_state:
         st.session_state.degrees = 0.0

@@ -37,10 +37,11 @@ def parameter_reset():
         st.session_state[key] = value
 
 
-def segmentation_prediction():
+def segmentation_prediction(show_title=True):
     """セマンティックセグメンテーションの予測を実行する関数"""
 
-    st.title("【推論】領域検出")
+    if show_title:
+        st.title("【推論】領域検出")
 
     # データセットのアップロード
     prediction_object = st.file_uploader(

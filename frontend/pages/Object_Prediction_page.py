@@ -23,11 +23,12 @@ def on_download_click(parent_directory,run_id):
     st.session_state.view=False
 
 
-def object_prediction():
+def object_prediction(show_title=True):
     # 共有ディレクトリ
     parent_directory = "shared/predict/"
 
-    st.title("【推論】物体検出")
+    if show_title:
+        st.title("【推論】物体検出")
 
     if'video_played' not in st.session_state:
         st.session_state.video_played=False

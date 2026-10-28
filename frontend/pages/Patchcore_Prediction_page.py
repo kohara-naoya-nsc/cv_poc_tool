@@ -42,9 +42,10 @@ def on_download_click(parent_directory,run_id):
     shutil.rmtree(delete_path)
     st.session_state.view=False
 
-def patchcore_prediction():
+def patchcore_prediction(show_title=True):
 
-    st.title("【推論】異常検知")
+    if show_title:
+        st.title("【推論】異常検知")
     if'zip_data' not in st.session_state:
         st.session_state.zip_data=None
     if'zip_filename' not in st.session_state:

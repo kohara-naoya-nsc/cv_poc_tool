@@ -69,13 +69,14 @@ def parameter_reset():
         st.session_state[key] = value
 
 
-def object_detection_yolox():
+def object_detection_yolox(show_title=True):
     """物体検出（YOLOX.ver）の学習画面を表示する関数"""
 
     ######################
     # 画面 UI の表示
     ######################
-    st.title("【学習】物体検出")
+    if show_title:
+        st.title("【学習】物体検出")
 
     st.markdown("##### zipファイルをアップロードしてください")
 

@@ -40,10 +40,11 @@ def parameter_reset():
         st.session_state[key] = value
 
 
-def image_classification_tf2():
+def image_classification_tf2(show_title=True):
     """画像分類：VGG学習ページ"""
 
-    st.title("【学習】画像分類")
+    if show_title:
+        st.title("【学習】画像分類")
 
     # データセットのアップロード
     train_object = st.file_uploader(

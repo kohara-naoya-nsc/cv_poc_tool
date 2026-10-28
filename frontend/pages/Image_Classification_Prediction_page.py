@@ -21,13 +21,14 @@ def on_download_click(parent_directory,run_id):
     st.session_state.view=False
 
 
-def image_classification_prediction():
+def image_classification_prediction(show_title=True):
     """画像分類：推論ページ"""
     # 共有ディレクトリ
     parent_directory = "shared/predict/"
 
 
-    st.title("【推論】画像分類")
+    if show_title:
+        st.title("【推論】画像分類")
 
     if'zip_data' not in st.session_state:
         st.session_state.zip_data=None
