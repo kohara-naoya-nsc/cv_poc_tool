@@ -27,9 +27,15 @@ def home_page():
             unsafe_allow_html=True
         )
 
-    st.markdown(
-        '<a href="https://dev.azure.com/nsdig01/ISTD_ImageProcessingAI_PoC_Tools/_git/azure-cv_poc_tool?path=/cv_poc_tool/backend/yolo" target="_blank" style="color: blue; text-decoration: underline;">YOLOv8 ソースコード</a>',
-        unsafe_allow_html=True
+    st.divider()
+    st.caption(
+        '[本ツールのソースコード](https://dev.azure.com/nsdig01/ISTD_ImageProcessingAI_PoC_Tools/_git/azure-cv_poc_tool?path=/cv_poc_tool/backend/yolo)'
+    )
+    st.caption(
+        '本ツールはUltralytics YOLOv8を使用しています。'
+        '[Ultralytics公式ソースコード](https://github.com/ultralytics/ultralytics)'
+        ' / '
+        '[AGPL-3.0ライセンス](https://github.com/ultralytics/ultralytics/blob/main/LICENSE)'
     )
 
 
