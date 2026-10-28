@@ -12,8 +12,7 @@ import configparser
 
 # 定数
 # common_config.iniの相対パス
-COMMON_CONFIG_PATH = "gzo_fw_common/common/common_config.ini"
-
+COMMON_CONFIG_PATH = "fw_preprocessing/gzo_fw_common/common/common_config.ini"
 
 def load_common_config():
     """

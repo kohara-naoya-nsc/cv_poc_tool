@@ -6,7 +6,7 @@ from pathlib import Path
 from zipfile import ZipFile
 from tempfile import TemporaryDirectory
 
-# from fw_preprocessing.preprocessing import data_prep
+from fw_preprocessing.preprocessing import data_prep
 
 
 ########################
@@ -50,7 +50,7 @@ def parameter_reset():
 def tool_gzo_fw():
     """前処理：画像認識FW"""
 
-    st.title("前処理：画像認識FW")
+    st.title("【前処理】データセット変換")
     share_path = st.session_state.get("share_path")
     uuid_num = st.session_state.get("share_uuid")
 
@@ -69,10 +69,10 @@ def tool_gzo_fw():
         )
 
     # データセットのアップロード
-    dataset_directory = st.file_uploader(
+    dataset_file = st.file_uploader(
         "対象データをアップロードしてください",
         type=["zip"],
-        key="dataset_directory",
+        key="dataset_file",
         )
 
 
@@ -116,7 +116,7 @@ def tool_gzo_fw():
     ##################################
     if start_button:
         # 必要ファイルの確認
-        if not dataset_directory:
+        if dataset_file is None:
             st.error("データセットをアップロードしてください")
             st.stop()
         
@@ -139,70 +139,69 @@ def tool_gzo_fw():
         ########################################
         # データセットを解凍後、共有ディレクトリに保存
         ########################################
-        input_path = Path(share_path, "input")
-        os.makedirs(input_path)
+        dataset_directory = Path(share_path, "dataset")
+        os.makedirs(dataset_directory)
 
         with TemporaryDirectory() as tmp_dir:
             # 一時ディレクトリ内にデータセットを保存
-            dataset_name = dataset_directory.name
+            dataset_name = dataset_file.name
             tmp_path = Path(tmp_dir, dataset_name)
             with open(tmp_path, "wb") as f:
-                f.write(dataset_directory.getbuffer())
+                f.write(dataset_file.getbuffer())
 
             # 一時ディレクトリ内のZIPファイルを解凍して入力ディレクトリに展開
             with ZipFile(tmp_path, "r") as zip_ref:
-                zip_ref.extractall(input_path)
+                zip_ref.extractall(dataset_directory)
 
 
         ######################################
         # 成果物格納ディレクトリの作成
         ######################################
-        output_path = Path(share_path, "output")
-        os.makedirs(output_path)
+        preped_dataset_directory = Path(share_path, "result")
+        os.makedirs(preped_dataset_directory)
 
 
         #####################
         # 前処理の実行
         #####################
-        # try:
-        #     data_prep(
-        #     input_path,
-        #     None,
-        #     dataset_format,
-        #     prep_mode,
-        #     train_data_ratio,
-        #     valid_data_ratio,
-        #     test_data_ratio,
-        #     contrast_augmentation_probability,
-        #     blur_augmentation_probability,
-        #     histogram_augmentation_probability,
-        #     gauss_noise_augmentation_probability,
-        #     salt_augmentation_probability,
-        #     flip_augmentation_probability,
-        #     rotate_augmentation_probability,
-        #     rotate_augmentation_degree,
-        #     output_path,
-        #     )
-        # except:
-        #     st.error("前処理に失敗しました")
-        #     st.stop()
+        try:
+            data_prep(
+                dataset_directory,
+                dataset_format,
+                prep_mode,
+                train_data_ratio,
+                valid_data_ratio,
+                test_data_ratio,
+                contrast_augmentation_probability,
+                blur_augmentation_probability,
+                histogram_augmentation_probability,
+                gauss_noise_augmentation_probability,
+                salt_augmentation_probability,
+                flip_augmentation_probability,
+                rotate_augmentation_probability,
+                rotate_augmentation_degree,
+                preped_dataset_directory,
+            )
+        except Exception as error:
+            st.exception(error)
+            st.stop()
 
 
-    ###########################
-    # 前処理結果のダウンロード
-    ###########################
-    # 学習結果の存在確認
-    # output_pth = Path(share_path, "output")
-    # if not os.path.exists(output_pth):
-    #     st.error(f"学習結果がありません")
-    # else:
-    #     # 学習結果をzipファイルに圧縮してダウンロード用に提供
-    #     output_zip = shutil.make_archive(output_pth, format='zip', root_dir=str(output_pth))
-    #     with open(output_zip, "rb") as f:
-    #         st.download_button(
-    #             label="学習結果のダウンロード",
-    #             data=f.read(),
-    #             file_name=f"{uuid_num}_vgg16_weights_tf_dim_ordering_tf_kernels_notop_学習結果.zip",
-    #             mime="application/zip",
-    #             on_click=lambda:on_download_click(share_path),
-    #         )
+        ###########################
+        # 前処理結果のダウンロード
+        ###########################
+        # 前処結果の存在確認
+        result_path = Path(share_path, "result")
+        if not os.path.exists(result_path):
+            st.error(f"前処理結果がありません")
+        else:
+            # 学習結果をzipファイルに圧縮してダウンロード用に提供
+            output_zip = shutil.make_archive(result_path, format='zip', root_dir=str(result_path))
+            with open(output_zip, "rb") as f:
+                st.download_button(
+                    label="前処理結果のダウンロード",
+                    data=f.read(),
+                    file_name=f"{uuid_num}_前処理結果.zip",
+                    mime="application/zip",
+                    on_click=lambda:on_download_click(share_path),
+                )

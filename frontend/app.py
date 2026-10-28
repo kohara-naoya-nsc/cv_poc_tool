@@ -45,7 +45,6 @@ class MultiApp:
 
     def run(self):
         st.sidebar.markdown("## メインメニュー")
-        st.sidebar.markdown("ページを選択してください:")
 
         # 現在のページをセッション状態で管理
         if 'current_page' not in st.session_state:
@@ -118,6 +117,7 @@ class MultiApp:
 
         # 選択されたページを実行
         for app in self.apps:
+            if app["id"] == st.session_state.current_page:
             if app["id"] == st.session_state.current_page:
                 app["function"]()
                 break

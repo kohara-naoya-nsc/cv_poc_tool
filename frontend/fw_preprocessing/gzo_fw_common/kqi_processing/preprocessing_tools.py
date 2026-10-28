@@ -18,7 +18,7 @@ import shutil
 import cv2
 import pandas as pd
 import numpy as np
-import mltable
+# import mltable
 from PIL import Image
 from math import ceil, floor
 from xml.etree import ElementTree

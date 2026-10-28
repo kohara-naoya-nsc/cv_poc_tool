@@ -21,9 +21,9 @@ from PIL import Image
 from logging import getLogger
 from sklearn.metrics import multilabel_confusion_matrix
 
-from fw_preprocessing.gzo_fw_common.kqi_processing import preprocessing_tools
-from fw_preprocessing.gzo_fw_common.common.common_tools import load_common_config
-from fw_preprocessing.gzo_fw_common.common.gzo_fw_exception import ImageReadError
+from gzo_fw_common.kqi_processing import preprocessing_tools
+from gzo_fw_common.common.common_tools import load_common_config
+from gzo_fw_common.common.gzo_fw_exception import ImageReadError
 import string
 import shutil
 import numpy as np

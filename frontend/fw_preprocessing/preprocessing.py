@@ -956,7 +956,6 @@ def _SemanticSegmentation_mltable_dataset_augmentation(
 
 def data_prep(
     dataset_directory: str,
-    mltable_dataset: str,
     dataset_format: str,
     prep_mode: str,
     train_data_ratio: float,
@@ -972,887 +971,911 @@ def data_prep(
     rotate_augmentation_degree: float,
     preped_dataset_directory: str,
 ) -> None:
-    # with mlflow.start_run() as mlflow_run:
-    with nullcontext():
-        try:
-            # KQIディレクトリ構造の追加
-            os.makedirs(KQI_INPUT_DIR_PATH, exist_ok=True)
-            kqi_input_dir_path = Path(KQI_INPUT_DIR_PATH)
-            os.makedirs(KQI_OUTPUT_DIR_PATH, exist_ok=True)
-            kqi_output_dir_path = Path(KQI_OUTPUT_DIR_PATH)
+    try:
+        # KQIディレクトリ構造の追加
+        os.makedirs(KQI_INPUT_DIR_PATH, exist_ok=True)
+        kqi_input_dir_path = Path(KQI_INPUT_DIR_PATH)
+        os.makedirs(KQI_OUTPUT_DIR_PATH, exist_ok=True)
+        kqi_output_dir_path = Path(KQI_OUTPUT_DIR_PATH)
 
-            # ロガー取得
-            logger = logging_tools.set_logger(KQI_OUTPUT_DIR_PATH)
-            # logger.info("start job: \n{}".format(str(mlflow_run.info)))
+        # ロガー取得
+        logger = logging_tools.set_logger(KQI_OUTPUT_DIR_PATH)
 
-            # コンポーネント出力ディレクトリの取得
-            preped_dataset_dir_path = Path(preped_dataset_directory)
-            # 増幅画像出力ディレクトリの作成
-            augmented_images_output_dir_path = (
-                kqi_output_dir_path / AUGMENTED_IMAGES_DIRECTORY_NAME
+        # コンポーネント出力ディレクトリの取得
+        preped_dataset_dir_path = Path(preped_dataset_directory)
+        # 増幅画像出力ディレクトリの作成
+        augmented_images_output_dir_path = (
+            kqi_output_dir_path / AUGMENTED_IMAGES_DIRECTORY_NAME
+        )
+        os.makedirs(str(augmented_images_output_dir_path / "train"), exist_ok=True)
+        os.makedirs(str(augmented_images_output_dir_path / "valid"), exist_ok=True)
+        os.makedirs(str(augmented_images_output_dir_path / "test"), exist_ok=True)
+
+        # 入力取得
+        if dataset_directory is not None:
+            # uri_folderからデータダウンロード
+            logger.info("download input data: {}".format(str(dataset_directory)))
+            shutil.copytree(
+                dataset_directory, str(kqi_input_dir_path), dirs_exist_ok=True
             )
-            os.makedirs(str(augmented_images_output_dir_path / "train"), exist_ok=True)
-            os.makedirs(str(augmented_images_output_dir_path / "valid"), exist_ok=True)
-            os.makedirs(str(augmented_images_output_dir_path / "test"), exist_ok=True)
+        elif mltable_dataset is not None:
+            raise NotImplementedError("MLTable形式のデータ処理は無効化されています")
 
-            # 入力取得
-            if dataset_directory is not None:
-                # uri_folderからデータダウンロード
-                logger.info("download input data: {}".format(str(dataset_directory)))
-                shutil.copytree(
-                    dataset_directory, str(kqi_input_dir_path), dirs_exist_ok=True
+        else:
+            raise Exception("not found input data")
+
+        # zip解凍
+        logger.info("decompose zip")
+        input_handler.decompress_zip(
+            str(kqi_input_dir_path), str(kqi_input_dir_path)
+        )
+
+        # 振り分けを実行
+        is_split = prep_mode == "split_augment"
+        directory = [
+            "Detection: YOLO(directory)",
+            "Detection: VOC(directory)",
+            "Classification: folder-tree(directory)",
+            "SemanticSegmentation: EIseg(directory)",
+            "SemanticSegmentation: LabelMe(directory)",
+        ]
+        train_image_path_list = []
+        valid_image_path_list = []
+        test_image_path_list = []
+        num_test_image = 0
+        split_txt_file_tmp_dir = Path(os.getcwd())
+
+        if is_split:
+            logger.info("split_augment mode")
+
+            # directoryの場合
+            if dataset_format in directory:
+                preprocessing_tools.distribute_images_for_detection(
+                    str(kqi_input_dir_path),
+                    str(split_txt_file_tmp_dir),
+                    train_data_ratio,
+                    test_data_ratio,
+                    valid_data_ratio,
                 )
-            elif mltable_dataset is not None:
-                raise NotImplementedError("MLTable形式のデータ処理は無効化されています")
+                train_txt_path = (
+                    split_txt_file_tmp_dir / preprocessing_tools.TRAIN_FILE_NAME
+                )
+                valid_txt_path = (
+                    split_txt_file_tmp_dir
+                    / preprocessing_tools.VALIDATION_FILE_NAME
+                )
+                test_txt_path = (
+                    split_txt_file_tmp_dir / preprocessing_tools.TEST_FILE_NAME
+                )
+                if train_txt_path.exists():
+                    train_image_path_list = [
+                        Path(p) for p in _get_list_from_txt(str(train_txt_path))
+                    ]
+                else:
+                    train_txt_path.touch()
+                if valid_txt_path.exists():
+                    valid_image_path_list = [
+                        Path(p) for p in _get_list_from_txt(str(valid_txt_path))
+                    ]
+                else:
+                    valid_txt_path.touch()
+                if test_txt_path.exists():
+                    test_image_path_list = [
+                        Path(p) for p in _get_list_from_txt(str(test_txt_path))
+                    ]
+                else:
+                    test_txt_path.touch()
+                # メトリック表示用の数値を取得
+                num_test_image = len(test_image_path_list)
 
-            else:
-                raise Exception("not found input data")
-
-            # zip解凍
-            logger.info("decompose zip")
-            input_handler.decompress_zip(
-                str(kqi_input_dir_path), str(kqi_input_dir_path)
-            )
-
-            # 振り分けを実行
-            is_split = prep_mode == "split_augment"
-            directory = [
-                "Detection: YOLO(directory)",
-                "Detection: VOC(directory)",
-                "Classification: folder-tree(directory)",
-                "SemanticSegmentation: EIseg(directory)",
-                "SemanticSegmentation: LabelMe(directory)",
-            ]
-            train_image_path_list = []
-            valid_image_path_list = []
-            test_image_path_list = []
-            num_test_image = 0
-            split_txt_file_tmp_dir = Path(os.getcwd())
-
-            # 振り分けモード（directory）
-            if is_split:
-                logger.info("split_augment mode")
-
-                # directoryの場合
-                if dataset_format in directory:
-                    preprocessing_tools.distribute_images_for_detection(
-                        str(kqi_input_dir_path),
-                        str(split_txt_file_tmp_dir),
-                        train_data_ratio,
-                        test_data_ratio,
-                        valid_data_ratio,
-                    )
-                    train_txt_path = (
-                        split_txt_file_tmp_dir / preprocessing_tools.TRAIN_FILE_NAME
-                    )
-                    valid_txt_path = (
-                        split_txt_file_tmp_dir
-                        / preprocessing_tools.VALIDATION_FILE_NAME
-                    )
-                    test_txt_path = (
-                        split_txt_file_tmp_dir / preprocessing_tools.TEST_FILE_NAME
-                    )
-                    if train_txt_path.exists():
-                        train_image_path_list = [
-                            Path(p) for p in _get_list_from_txt(str(train_txt_path))
-                        ]
-                    else:
-                        train_txt_path.touch()
-                    if valid_txt_path.exists():
-                        valid_image_path_list = [
-                            Path(p) for p in _get_list_from_txt(str(valid_txt_path))
-                        ]
-                    else:
-                        valid_txt_path.touch()
-                    if test_txt_path.exists():
-                        test_image_path_list = [
-                            Path(p) for p in _get_list_from_txt(str(test_txt_path))
-                        ]
-                    else:
-                        test_txt_path.touch()
-                    # メトリック表示用の数値を取得
-                    num_test_image = len(test_image_path_list)
-
-                    if (
-                        len(train_image_path_list) <= 0
-                        and len(valid_image_path_list) <= 0
-                        and len(test_image_path_list) <= 0
-                    ):
-                        raise Exception("対象となる画像がありません")
-
-            elif not is_split:
-                logger.info("augment only mode")
-                # 振り分けを実行しない場合は全てtrain
-                for file_path in kqi_input_dir_path.glob("**/*"):
-                    if file_path.suffix in IMAGE_SUFFIX:
-                        train_image_path_list.append(Path(file_path))
-
-                if len(train_image_path_list) <= 0:
+                if (
+                    len(train_image_path_list) <= 0
+                    and len(valid_image_path_list) <= 0
+                    and len(test_image_path_list) <= 0
+                ):
                     raise Exception("対象となる画像がありません")
 
+        elif not is_split:
+            logger.info("augment only mode")
+            # 振り分けを実行しない場合は全てtrain
+            for file_path in kqi_input_dir_path.glob("**/*"):
+                if file_path.suffix in IMAGE_SUFFIX:
+                    train_image_path_list.append(Path(file_path))
+
+            if len(train_image_path_list) <= 0:
+                raise Exception("対象となる画像がありません")
+
+            with open(
+                str(split_txt_file_tmp_dir / preprocessing_tools.TRAIN_FILE_NAME),
+                "w",
+                encoding="utf-8",
+            ) as f:
+                f.writelines([p.name + "\n" for p in train_image_path_list])
+
+        # augmentation設定の作成
+        is_augmentation = {
+            "contrast": True if contrast_augmentation_probability > 0 else False,
+            "blur": True if blur_augmentation_probability > 0 else False,
+            "histogram": True if histogram_augmentation_probability > 0 else False,
+            "gauss_noise": True
+            if gauss_noise_augmentation_probability > 0
+            else False,
+            "salt": True if salt_augmentation_probability > 0 else False,
+            "flip": True if flip_augmentation_probability > 0 else False,
+            "rotate": rotate_augmentation_degree
+            if rotate_augmentation_probability > 0
+            else 0,
+        }
+        augmentation_setting = {
+            "contrast": contrast_augmentation_probability,
+            "blur": blur_augmentation_probability,
+            "histogram": histogram_augmentation_probability,
+            "gauss_noise": gauss_noise_augmentation_probability,
+            "salt": salt_augmentation_probability,
+            "flip": flip_augmentation_probability,
+            "rotate": rotate_augmentation_probability,
+        }
+
+
+        ###################################
+        # Detection: YOLO(directory)の場合
+        ###################################
+        if dataset_format == "Detection: YOLO(directory)":
+            logger.info("dataset format: YOLO")
+            # ディレクトリ構造の作成
+            (preped_dataset_dir_path / "data").mkdir(parents=True, exist_ok=True)
+            (preped_dataset_dir_path / "text").mkdir(parents=True, exist_ok=True)
+
+            #################
+            # クラスリスト抽出
+            #################
+            # classes.txtの存在確認
+            yolo_classes_txt_path = None
+            for file_path in kqi_input_dir_path.glob("**/*"):
+                if file_path.is_file() and file_path.name == "classes.txt":
+                    yolo_classes_txt_path = file_path
+                    break
+
+            # クラスリスト抽出
+            if yolo_classes_txt_path is None:
+                raise Exception("not found classes.txt")
+            yolo_class_list = _get_list_from_txt(yolo_classes_txt_path)
+            shutil.move(
+                str(yolo_classes_txt_path),
+                str(preped_dataset_dir_path / "text" / "classes.txt"),
+            )
+            logger.info("get class list: {}".format(str(yolo_class_list)))
+
+
+            #################
+            # 画像増幅
+            #################
+            is_voc = False
+            if len(train_image_path_list) > 0:
+                logger.info(
+                    "train image augmentation. original {} images".format(
+                        str(len(train_image_path_list))
+                    )
+                )
+
+                # YOLOデータセットの画像増幅を実行
+                (
+                    augmented_train_image_path_list,
+                    is_voc,
+                ) = _yolo_dataset_augmentation(
+                    is_augmentation,
+                    augmentation_setting,
+                    train_image_path_list,
+                    str(preped_dataset_dir_path / "data"),
+                    yolo_class_list,
+                )
+
+                # 増幅後の画像を出力ディレクトリにコピー
+                for augmented_train_image_path in augmented_train_image_path_list:
+                    shutil.copy(
+                        str(augmented_train_image_path),
+                        str(
+                            augmented_images_output_dir_path
+                            / "train"
+                            / augmented_train_image_path.name
+                        ),
+                    )
+
+            #################
+            # 検証画像の増幅
+            #################
+            if len(valid_image_path_list) > 0:
+                logger.info(
+                    "valid image augmentation. original {} images".format(
+                        str(len(valid_image_path_list))
+                    )
+                )
+
+                # YOLOデータセットの検証画像増幅を実行
+                (
+                    augmented_valid_image_path_list,
+                    is_voc,
+                ) = _yolo_dataset_augmentation(
+                    is_augmentation,
+                    augmentation_setting,
+                    valid_image_path_list,
+                    str(preped_dataset_dir_path / "data"),
+                    yolo_class_list,
+                )
+
+                # 増幅後の画像を出力ディレクトリにコピー
+                for augmented_valid_image_path in augmented_valid_image_path_list:
+                    shutil.copy(
+                        str(augmented_valid_image_path),
+                        str(
+                            augmented_images_output_dir_path
+                            / "valid"
+                            / augmented_valid_image_path.name
+                        ),
+                    )
+
+            ##################################
+            # 元画像・アノテーションファイルの移動
+            ##################################
+            annotation_suffix = ".xml" if is_voc else ".txt"
+
+            # 学習画像の移動
+            for train_image_path in train_image_path_list:
+                shutil.move(
+                    str(train_image_path),
+                    str(preped_dataset_dir_path / "data" / train_image_path.name),
+                )
+                train_path = (
+                    train_image_path.parent.parent
+                    / "labels"
+                    / (train_image_path.stem + annotation_suffix)
+                )
+                shutil.move(
+                    str(train_path),
+                    str(
+                        preped_dataset_dir_path
+                        / "data"
+                        / (train_image_path.stem + annotation_suffix)
+                    ),
+                )
+
+            # 検証画像の移動
+            for valid_image_path in valid_image_path_list:
+                shutil.move(
+                    str(valid_image_path),
+                    str(preped_dataset_dir_path / "data" / valid_image_path.name),
+                )
+                valid_path = (
+                    valid_image_path.parent.parent
+                    / "labels"
+                    / (valid_image_path.stem + annotation_suffix)
+                )
+                shutil.move(
+                    str(valid_path),
+                    str(
+                        preped_dataset_dir_path
+                        / "data"
+                        / (valid_image_path.stem + annotation_suffix)
+                    ),
+                )
+
+            # テスト画像の移動
+            for test_image_path in test_image_path_list:
+                shutil.move(
+                    str(test_image_path),
+                    str(preped_dataset_dir_path / "data" / test_image_path.name),
+                )
+                test_path = (
+                    test_image_path.parent.parent
+                    / "labels"
+                    / (test_image_path.stem + annotation_suffix)
+                )
+                shutil.move(
+                    str(test_path),
+                    str(
+                        preped_dataset_dir_path
+                        / "data"
+                        / (test_image_path.stem + annotation_suffix)
+                    ),
+                )
+
+            # 画像リスト作成
+            if len(train_image_path_list) > 0:
+                train_image_path_list.extend(augmented_train_image_path_list)
+                train_image_list_txt_path = (
+                    preped_dataset_dir_path / "text" / "train.txt"
+                )
                 with open(
-                    str(split_txt_file_tmp_dir / preprocessing_tools.TRAIN_FILE_NAME),
-                    "w",
-                    encoding="utf-8",
+                    str(train_image_list_txt_path), "w", encoding="utf-8"
                 ) as f:
                     f.writelines([p.name + "\n" for p in train_image_path_list])
 
-            # augmentation設定の作成
-            is_augmentation = {
-                "contrast": True if contrast_augmentation_probability > 0 else False,
-                "blur": True if blur_augmentation_probability > 0 else False,
-                "histogram": True if histogram_augmentation_probability > 0 else False,
-                "gauss_noise": True
-                if gauss_noise_augmentation_probability > 0
-                else False,
-                "salt": True if salt_augmentation_probability > 0 else False,
-                "flip": True if flip_augmentation_probability > 0 else False,
-                "rotate": rotate_augmentation_degree
-                if rotate_augmentation_probability > 0
-                else 0,
-            }
-            augmentation_setting = {
-                "contrast": contrast_augmentation_probability,
-                "blur": blur_augmentation_probability,
-                "histogram": histogram_augmentation_probability,
-                "gauss_noise": gauss_noise_augmentation_probability,
-                "salt": salt_augmentation_probability,
-                "flip": flip_augmentation_probability,
-                "rotate": rotate_augmentation_probability,
-            }
+            if len(valid_image_path_list) > 0:
+                valid_image_path_list.extend(augmented_valid_image_path_list)
+                valid_image_list_txt_path = (
+                    preped_dataset_dir_path / "text" / "valid.txt"
+                )
+                with open(
+                    str(valid_image_list_txt_path), "w", encoding="utf-8"
+                ) as f:
+                    f.writelines([p.name + "\n" for p in valid_image_path_list])
 
-            if dataset_format == "Detection: YOLO(directory)":
-                logger.info("dataset format: YOLO")
-                # ディレクトリ構造の作成
-                (preped_dataset_dir_path / "data").mkdir(parents=True, exist_ok=True)
-                (preped_dataset_dir_path / "text").mkdir(parents=True, exist_ok=True)
+            if len(test_image_path_list) > 0:
+                test_image_list_txt_path = (
+                    preped_dataset_dir_path / "text" / "test.txt"
+                )
+                with open(
+                    str(test_image_list_txt_path), "w", encoding="utf-8"
+                ) as f:
+                    f.writelines([p.name + "\n" for p in test_image_path_list])
 
-                # クラスリスト抽出
-                yolo_classes_txt_path = None
-                for file_path in kqi_input_dir_path.glob("**/*"):
-                    if file_path.is_file() and file_path.name == "classes.txt":
-                        yolo_classes_txt_path = file_path
-                        break
+        elif dataset_format == "Detection: VOC(directory)":
+            logger.info("dataset format: VOC")
 
-                if yolo_classes_txt_path is None:
-                    raise Exception("not found classes.txt")
-                yolo_class_list = _get_list_from_txt(yolo_classes_txt_path)
+            for d in [
+                "VOC2007",
+                "VOC2007/Annotations",
+                "VOC2007/ImageSets/Main",
+                "VOC2007/JPEGImages",
+            ]:
+                os.makedirs(str(preped_dataset_dir_path / d), exist_ok=True)
+
+            if len(train_image_path_list) > 0:
+                logger.info(
+                    "train image augmentation. original {} images".format(
+                        str(len(train_image_path_list))
+                    )
+                )
+                augmented_train_image_path_list = _voc_dataset_augmentation(
+                    is_augmentation,
+                    augmentation_setting,
+                    train_image_path_list,
+                    str(preped_dataset_dir_path / "VOC2007"),
+                    "",
+                )
+                # mlflow.log_metric(
+                #     "学習(train)画像枚数",
+                #     len(train_image_path_list)
+                #     + len(augmented_train_image_path_list),
+                # )
+                for augmented_train_image_path in augmented_train_image_path_list:
+                    shutil.copy(
+                        str(augmented_train_image_path),
+                        str(
+                            augmented_images_output_dir_path
+                            / "train"
+                            / augmented_train_image_path.name
+                        ),
+                    )
+            if len(valid_image_path_list) > 0:
+                logger.info(
+                    "valid image augmentation. original {} images".format(
+                        str(len(valid_image_path_list))
+                    )
+                )
+                augmented_valid_image_path_list = _voc_dataset_augmentation(
+                    is_augmentation,
+                    augmentation_setting,
+                    valid_image_path_list,
+                    str(preped_dataset_dir_path / "VOC2007"),
+                    "",
+                )
+                # mlflow.log_metric(
+                #     "検証(valid)画像枚数",
+                #     len(valid_image_path_list)
+                #     + len(augmented_valid_image_path_list),
+                # )
+                for augmented_valid_image_path in augmented_valid_image_path_list:
+                    shutil.copy(
+                        str(augmented_valid_image_path),
+                        str(
+                            augmented_images_output_dir_path
+                            / "valid"
+                            / augmented_valid_image_path.name
+                        ),
+                    )
+
+            # 元画像・アノテーションファイルの移動
+            all_image_path_list = (
+                train_image_path_list + valid_image_path_list + test_image_path_list
+            )
+            for image_path in all_image_path_list:
                 shutil.move(
-                    str(yolo_classes_txt_path),
-                    str(preped_dataset_dir_path / "text" / "classes.txt"),
+                    str(image_path),
+                    str(
+                        preped_dataset_dir_path
+                        / "VOC2007"
+                        / "JPEGImages"
+                        / image_path.name
+                    ),
                 )
-                logger.info("get class list: {}".format(str(yolo_class_list)))
-
-                # 画像増幅
-                is_voc = False
-                if len(train_image_path_list) > 0:
-                    logger.info(
-                        "train image augmentation. original {} images".format(
-                            str(len(train_image_path_list))
-                        )
-                    )
-                    (
-                        augmented_train_image_path_list,
-                        is_voc,
-                    ) = _yolo_dataset_augmentation(
-                        is_augmentation,
-                        augmentation_setting,
-                        train_image_path_list,
-                        str(preped_dataset_dir_path / "data"),
-                        yolo_class_list,
-                    )
-                    # mlflow.log_metric(
-                    #     "学習(train)画像枚数",
-                    #     len(train_image_path_list)
-                    #     + len(augmented_train_image_path_list),
-                    # )
-                    for augmented_train_image_path in augmented_train_image_path_list:
-                        shutil.copy(
-                            str(augmented_train_image_path),
-                            str(
-                                augmented_images_output_dir_path
-                                / "train"
-                                / augmented_train_image_path.name
-                            ),
-                        )
-
-                if len(valid_image_path_list) > 0:
-                    logger.info(
-                        "valid image augmentation. original {} images".format(
-                            str(len(valid_image_path_list))
-                        )
-                    )
-                    (
-                        augmented_valid_image_path_list,
-                        is_voc,
-                    ) = _yolo_dataset_augmentation(
-                        is_augmentation,
-                        augmentation_setting,
-                        valid_image_path_list,
-                        str(preped_dataset_dir_path / "data"),
-                        yolo_class_list,
-                    )
-                    # mlflow.log_metric(
-                    #     "検証(valid)画像枚数",
-                    #     len(valid_image_path_list)
-                    #     + len(augmented_valid_image_path_list),
-                    # )
-                    for augmented_valid_image_path in augmented_valid_image_path_list:
-                        shutil.copy(
-                            str(augmented_valid_image_path),
-                            str(
-                                augmented_images_output_dir_path
-                                / "valid"
-                                / augmented_valid_image_path.name
-                            ),
-                        )
-
-                # 元画像・アノテーションファイルの移動
-                annotation_suffix = ".xml" if is_voc else ".txt"
-                for train_image_path in train_image_path_list:
-                    shutil.move(
-                        str(train_image_path),
-                        str(preped_dataset_dir_path / "data" / train_image_path.name),
-                    )
+                try:
                     shutil.move(
                         str(
-                            train_image_path.parent
-                            / (train_image_path.stem + annotation_suffix)
+                            Path(
+                                str(image_path.parent).replace(
+                                    "JPEGImages", "Annotations"
+                                ),
+                                image_path.stem + ".xml",
+                            )
                         ),
-                        str(
-                            preped_dataset_dir_path
-                            / "data"
-                            / (train_image_path.stem + annotation_suffix)
-                        ),
-                    )
-                for valid_image_path in valid_image_path_list:
-                    shutil.move(
-                        str(valid_image_path),
-                        str(preped_dataset_dir_path / "data" / valid_image_path.name),
-                    )
-                    shutil.move(
-                        str(
-                            valid_image_path.parent
-                            / (valid_image_path.stem + annotation_suffix)
-                        ),
-                        str(
-                            preped_dataset_dir_path
-                            / "data"
-                            / (valid_image_path.stem + annotation_suffix)
-                        ),
-                    )
-                for test_image_path in test_image_path_list:
-                    shutil.move(
-                        str(test_image_path),
-                        str(preped_dataset_dir_path / "data" / test_image_path.name),
-                    )
-                    shutil.move(
-                        str(
-                            test_image_path.parent
-                            / (test_image_path.stem + annotation_suffix)
-                        ),
-                        str(
-                            preped_dataset_dir_path
-                            / "data"
-                            / (test_image_path.stem + annotation_suffix)
-                        ),
-                    )
-
-                # 画像リスト作成
-                if len(train_image_path_list) > 0:
-                    train_image_path_list.extend(augmented_train_image_path_list)
-                    train_image_list_txt_path = (
-                        preped_dataset_dir_path / "text" / "train.txt"
-                    )
-                    with open(
-                        str(train_image_list_txt_path), "w", encoding="utf-8"
-                    ) as f:
-                        f.writelines([p.name + "\n" for p in train_image_path_list])
-
-                if len(valid_image_path_list) > 0:
-                    valid_image_path_list.extend(augmented_valid_image_path_list)
-                    valid_image_list_txt_path = (
-                        preped_dataset_dir_path / "text" / "valid.txt"
-                    )
-                    with open(
-                        str(valid_image_list_txt_path), "w", encoding="utf-8"
-                    ) as f:
-                        f.writelines([p.name + "\n" for p in valid_image_path_list])
-
-                if len(test_image_path_list) > 0:
-                    test_image_list_txt_path = (
-                        preped_dataset_dir_path / "text" / "test.txt"
-                    )
-                    with open(
-                        str(test_image_list_txt_path), "w", encoding="utf-8"
-                    ) as f:
-                        f.writelines([p.name + "\n" for p in test_image_path_list])
-
-            elif dataset_format == "Detection: VOC(directory)":
-                logger.info("dataset format: VOC")
-
-                for d in [
-                    "VOC2007",
-                    "VOC2007/Annotations",
-                    "VOC2007/ImageSets/Main",
-                    "VOC2007/JPEGImages",
-                ]:
-                    os.makedirs(str(preped_dataset_dir_path / d), exist_ok=True)
-
-                if len(train_image_path_list) > 0:
-                    logger.info(
-                        "train image augmentation. original {} images".format(
-                            str(len(train_image_path_list))
-                        )
-                    )
-                    augmented_train_image_path_list = _voc_dataset_augmentation(
-                        is_augmentation,
-                        augmentation_setting,
-                        train_image_path_list,
-                        str(preped_dataset_dir_path / "VOC2007"),
-                        "",
-                    )
-                    # mlflow.log_metric(
-                    #     "学習(train)画像枚数",
-                    #     len(train_image_path_list)
-                    #     + len(augmented_train_image_path_list),
-                    # )
-                    for augmented_train_image_path in augmented_train_image_path_list:
-                        shutil.copy(
-                            str(augmented_train_image_path),
-                            str(
-                                augmented_images_output_dir_path
-                                / "train"
-                                / augmented_train_image_path.name
-                            ),
-                        )
-                if len(valid_image_path_list) > 0:
-                    logger.info(
-                        "valid image augmentation. original {} images".format(
-                            str(len(valid_image_path_list))
-                        )
-                    )
-                    augmented_valid_image_path_list = _voc_dataset_augmentation(
-                        is_augmentation,
-                        augmentation_setting,
-                        valid_image_path_list,
-                        str(preped_dataset_dir_path / "VOC2007"),
-                        "",
-                    )
-                    # mlflow.log_metric(
-                    #     "検証(valid)画像枚数",
-                    #     len(valid_image_path_list)
-                    #     + len(augmented_valid_image_path_list),
-                    # )
-                    for augmented_valid_image_path in augmented_valid_image_path_list:
-                        shutil.copy(
-                            str(augmented_valid_image_path),
-                            str(
-                                augmented_images_output_dir_path
-                                / "valid"
-                                / augmented_valid_image_path.name
-                            ),
-                        )
-
-                # 元画像・アノテーションファイルの移動
-                all_image_path_list = (
-                    train_image_path_list + valid_image_path_list + test_image_path_list
-                )
-                for image_path in all_image_path_list:
-                    shutil.move(
-                        str(image_path),
                         str(
                             preped_dataset_dir_path
                             / "VOC2007"
-                            / "JPEGImages"
-                            / image_path.name
+                            / "Annotations"
+                            / (image_path.stem + ".xml")
                         ),
                     )
-                    try:
-                        shutil.move(
-                            str(
-                                Path(
-                                    str(image_path.parent).replace(
-                                        "JPEGImages", "Annotations"
-                                    ),
-                                    image_path.stem + ".xml",
-                                )
-                            ),
-                            str(
-                                preped_dataset_dir_path
-                                / "VOC2007"
-                                / "Annotations"
-                                / (image_path.stem + ".xml")
-                            ),
-                        )
-                    except Exception:
-                        logger.exception("not found original annotation file")
-                        continue
-                # 画像リスト作成
-                imageset_main_dir_path = (
-                    preped_dataset_dir_path / "VOC2007" / "ImageSets" / "Main"
+                except Exception:
+                    logger.exception("not found original annotation file")
+                    continue
+            # 画像リスト作成
+            imageset_main_dir_path = (
+                preped_dataset_dir_path / "VOC2007" / "ImageSets" / "Main"
+            )
+            if len(train_image_path_list) > 0:
+                train_image_path_list.extend(augmented_train_image_path_list)
+                train_image_list_txt_path = imageset_main_dir_path / "train.txt"
+                with open(
+                    str(train_image_list_txt_path), "w", encoding="utf-8"
+                ) as f:
+                    f.writelines([p.stem + "\n" for p in train_image_path_list])
+
+            if len(valid_image_path_list) > 0:
+                valid_image_path_list.extend(augmented_valid_image_path_list)
+                valid_image_list_txt_path = imageset_main_dir_path / "valid.txt"
+                with open(
+                    str(valid_image_list_txt_path), "w", encoding="utf-8"
+                ) as f:
+                    f.writelines([p.stem + "\n" for p in valid_image_path_list])
+
+            if len(test_image_path_list) > 0:
+                test_image_list_txt_path = imageset_main_dir_path / "test.txt"
+                with open(
+                    str(test_image_list_txt_path), "w", encoding="utf-8"
+                ) as f:
+                    f.writelines([p.stem + "\n" for p in test_image_path_list])
+
+
+        ###############################################
+        # Classification: folder-tree(directory) の場合
+        ###############################################
+        elif dataset_format == "Classification: folder-tree(directory)":
+            logger.info("dataset format: folder-tree")
+
+            ########################
+            # 分割先ディレクトリ作成
+            ########################
+            os.makedirs(
+                str(preped_dataset_dir_path / "images" / "train"), exist_ok=True
+            )
+            os.makedirs(
+                str(preped_dataset_dir_path / "images" / "valid"), exist_ok=True
+            )
+            os.makedirs(
+                str(preped_dataset_dir_path / "images" / "test"), exist_ok=True
+            )
+
+
+            #######################################################
+            # 学習用データの画像増強と、生成画像を別の出力フォルダもコピー
+            #######################################################
+            if len(train_image_path_list) > 0:
+                logger.info(
+                    "train image augmentation. original {} images".format(
+                        str(len(train_image_path_list))
+                    )
                 )
-                if len(train_image_path_list) > 0:
-                    train_image_path_list.extend(augmented_train_image_path_list)
-                    train_image_list_txt_path = imageset_main_dir_path / "train.txt"
-                    with open(
-                        str(train_image_list_txt_path), "w", encoding="utf-8"
-                    ) as f:
-                        f.writelines([p.stem + "\n" for p in train_image_path_list])
-
-                if len(valid_image_path_list) > 0:
-                    valid_image_path_list.extend(augmented_valid_image_path_list)
-                    valid_image_list_txt_path = imageset_main_dir_path / "valid.txt"
-                    with open(
-                        str(valid_image_list_txt_path), "w", encoding="utf-8"
-                    ) as f:
-                        f.writelines([p.stem + "\n" for p in valid_image_path_list])
-
-                if len(test_image_path_list) > 0:
-                    test_image_list_txt_path = imageset_main_dir_path / "test.txt"
-                    with open(
-                        str(test_image_list_txt_path), "w", encoding="utf-8"
-                    ) as f:
-                        f.writelines([p.stem + "\n" for p in test_image_path_list])
-
-            elif dataset_format == "Classification: folder-tree(directory)":
-                logger.info("dataset format: folder-tree")
-                os.makedirs(
-                    str(preped_dataset_dir_path / "images" / "train"), exist_ok=True
+                augmented_train_image_path_list = (
+                    _classification_dataset_augmentation(
+                        is_augmentation,
+                        augmentation_setting,
+                        train_image_path_list,
+                        str(preped_dataset_dir_path / "images" / "train"),
+                    )
                 )
-                os.makedirs(
-                    str(preped_dataset_dir_path / "images" / "valid"), exist_ok=True
-                )
-                os.makedirs(
-                    str(preped_dataset_dir_path / "images" / "test"), exist_ok=True
-                )
-
-                if len(train_image_path_list) > 0:
-                    logger.info(
-                        "train image augmentation. original {} images".format(
-                            str(len(train_image_path_list))
-                        )
-                    )
-                    augmented_train_image_path_list = (
-                        _classification_dataset_augmentation(
-                            is_augmentation,
-                            augmentation_setting,
-                            train_image_path_list,
-                            str(preped_dataset_dir_path / "images" / "train"),
-                        )
-                    )
-                    # mlflow.log_metric(
-                    #     "学習(train)画像枚数",
-                    #     len(train_image_path_list)
-                    #     + len(augmented_train_image_path_list),
-                    # )
-                    for augmented_train_image_path in augmented_train_image_path_list:
-                        shutil.copy(
-                            str(augmented_train_image_path),
-                            str(
-                                augmented_images_output_dir_path
-                                / "train"
-                                / augmented_train_image_path.name
-                            ),
-                        )
-                if len(valid_image_path_list) > 0:
-                    logger.info(
-                        "valid image augmentation. original {} images".format(
-                            str(len(valid_image_path_list))
-                        )
-                    )
-                    augmented_valid_image_path_list = (
-                        _classification_dataset_augmentation(
-                            is_augmentation,
-                            augmentation_setting,
-                            valid_image_path_list,
-                            str(preped_dataset_dir_path / "images" / "valid"),
-                        )
-                    )
-                    # mlflow.log_metric(
-                    #     "検証(valid)画像枚数",
-                    #     len(valid_image_path_list)
-                    #     + len(augmented_valid_image_path_list),
-                    # )
-                    for augmented_valid_image_path in augmented_valid_image_path_list:
-                        shutil.copy(
-                            str(augmented_valid_image_path),
-                            str(
-                                augmented_images_output_dir_path
-                                / "valid"
-                                / augmented_valid_image_path.name
-                            ),
-                        )
-
-                # 元画像の移動
-                for train_image_path in train_image_path_list:
-                    train_image_output_dir_path = (
-                        preped_dataset_dir_path
-                        / "images"
-                        / "train"
-                        / train_image_path.parent.name
-                    )
-                    if not train_image_output_dir_path.exists():
-                        os.makedirs(str(train_image_output_dir_path))
-                    shutil.move(
-                        str(train_image_path),
-                        str(train_image_output_dir_path / train_image_path.name),
-                    )
-                for valid_image_path in valid_image_path_list:
-                    valid_image_output_dir_path = (
-                        preped_dataset_dir_path
-                        / "images"
-                        / "valid"
-                        / valid_image_path.parent.name
-                    )
-                    if not valid_image_output_dir_path.exists():
-                        os.makedirs(str(valid_image_output_dir_path))
-                    shutil.move(
-                        str(valid_image_path),
-                        str(valid_image_output_dir_path / valid_image_path.name),
-                    )
-                for test_image_path in test_image_path_list:
-                    test_image_output_dir_path = (
-                        preped_dataset_dir_path
-                        / "images"
-                        / "test"
-                        / test_image_path.parent.name
-                    )
-                    if not test_image_output_dir_path.exists():
-                        os.makedirs(str(test_image_output_dir_path))
-                    shutil.move(
-                        str(test_image_path),
-                        str(test_image_output_dir_path / test_image_path.name),
-                    )
-
-            elif dataset_format in [
-                "SemanticSegmentation: EIseg(directory)",
-                "SemanticSegmentation: LabelMe(directory)",
-            ]:
-
-                image_path_list = []
-                json_path_list = []
-
-                # グレースケール画像の格納ディレクトリ作成
-                graycolor_image_dir = str(
-                    split_txt_file_tmp_dir / "graycolor_image_dir"
-                )
-                os.makedirs(graycolor_image_dir, exist_ok=True)
-
-                # 存在チェック
-                if kqi_input_dir_path.exists() is False:
-                    raise FileNotFoundError("ディレクトリが見つかりません：" + str(kqi_input_dir_path))
-                # ディレクトリチェック
-                if kqi_input_dir_path.is_dir() is False:
-                    raise NotADirectoryError("ディレクトリではありません：" + str(kqi_input_dir_path))
-
-                # データセットから画像とjsonのパスリストをそれぞれ取得
-                for file_path in kqi_input_dir_path.glob("**/*"):
-                    if file_path.suffix in IMAGE_SUFFIX:
-                        image_path_list.append(str(Path(file_path)))
-                    elif file_path.suffix == ".json":
-                        json_path_list.append(str(Path(file_path)))
-
-                # 増幅データの保存先を作成（train用）
-                os.makedirs(
-                    str(augmented_images_output_dir_path / "train"), exist_ok=True
-                )
-                # 増幅データの保存先を作成（valid用）
-                os.makedirs(
-                    str(augmented_images_output_dir_path / "valid"), exist_ok=True
-                )
-
-                if dataset_format == "SemanticSegmentation: EIseg(directory)":
-
-                    # クラスリスト生成
-                    class_txt_path = preprocessing_tools.generate_classestxt_from_json(
-                        "SemanticSegmentation: EIseg(directory)",
-                        json_path_list,
-                        split_txt_file_tmp_dir,
-                    )
-
-                    # 上書きできるように作業ディレクトリにjsonファイルを保存
-                    json_path = json_path_list[0]
-                    shutil.copy(str(json_path), str(split_txt_file_tmp_dir))
-
-                    # train用データの増幅処理
-                    train_augmented_image_path_list = (
-                        _SemanticSegmentation_EIseg_dataset_augmentation(
-                            flip_augmentation_probability,
-                            train_image_path_list,
-                            str(split_txt_file_tmp_dir / "annotations.json"),
-                            str(augmented_images_output_dir_path / "train"),
-                        )
-                    )
-
-                    # valid用データの増幅処理
-                    valid_augmented_image_path_list = (
-                        _SemanticSegmentation_EIseg_dataset_augmentation(
-                            flip_augmentation_probability,
-                            valid_image_path_list,
-                            str(split_txt_file_tmp_dir / "annotations.json"),
-                            str(augmented_images_output_dir_path / "valid"),
-                        )
-                    )
-
-                    # グレースケール画像生成
-                    graycolor_image_path_list = (
-                        preprocessing_tools.generate_graycolor_image_from_json(
-                            "SemanticSegmentation: EIseg(directory)",
-                            [str(split_txt_file_tmp_dir / "annotations.json")],
-                            class_txt_path,
-                            graycolor_image_dir,
-                        )
-                    )
-
-                    # annotations.json出力
+                for augmented_train_image_path in augmented_train_image_path_list:
                     shutil.copy(
-                        str(split_txt_file_tmp_dir / "annotations.json"),
-                        str(augmented_images_output_dir_path),
+                        str(augmented_train_image_path),
+                        str(
+                            augmented_images_output_dir_path
+                            / "train"
+                            / augmented_train_image_path.name
+                        ),
                     )
 
-                elif dataset_format == "SemanticSegmentation: LabelMe(directory)":
-
-                    # クラスリスト生成
-                    class_txt_path = preprocessing_tools.generate_classestxt_from_json(
-                        "SemanticSegmentation: LabelMe(directory)",
-                        json_path_list,
-                        split_txt_file_tmp_dir,
+            #######################################################
+            # 検証用データの画像増強と、生成画像を別の出力フォルダもコピー
+            #######################################################
+            if len(valid_image_path_list) > 0:
+                logger.info(
+                    "valid image augmentation. original {} images".format(
+                        str(len(valid_image_path_list))
+                    )
+                )
+                augmented_valid_image_path_list = (
+                    _classification_dataset_augmentation(
+                        is_augmentation,
+                        augmentation_setting,
+                        valid_image_path_list,
+                        str(preped_dataset_dir_path / "images" / "valid"),
+                    )
+                )
+                for augmented_valid_image_path in augmented_valid_image_path_list:
+                    shutil.copy(
+                        str(augmented_valid_image_path),
+                        str(
+                            augmented_images_output_dir_path
+                            / "valid"
+                            / augmented_valid_image_path.name
+                        ),
                     )
 
-                    # train用データの増幅処理
-                    (
-                        train_augmented_image_path_list,
-                        train_augmented_json_path_list,
-                    ) = _SemanticSegmentation_LabelMe_dataset_augmentation(
+
+            ###################
+            # 元画像の移動
+            ###################
+            for train_image_path in train_image_path_list:
+                train_image_output_dir_path = (
+                    preped_dataset_dir_path
+                    / "images"
+                    / "train"
+                    / train_image_path.parent.name
+                )
+                if not train_image_output_dir_path.exists():
+                    os.makedirs(str(train_image_output_dir_path))
+                shutil.move(
+                    str(train_image_path),
+                    str(train_image_output_dir_path / train_image_path.name),
+                )
+            for valid_image_path in valid_image_path_list:
+                valid_image_output_dir_path = (
+                    preped_dataset_dir_path
+                    / "images"
+                    / "valid"
+                    / valid_image_path.parent.name
+                )
+                if not valid_image_output_dir_path.exists():
+                    os.makedirs(str(valid_image_output_dir_path))
+                shutil.move(
+                    str(valid_image_path),
+                    str(valid_image_output_dir_path / valid_image_path.name),
+                )
+            for test_image_path in test_image_path_list:
+                test_image_output_dir_path = (
+                    preped_dataset_dir_path
+                    / "images"
+                    / "test"
+                    / test_image_path.parent.name
+                )
+                if not test_image_output_dir_path.exists():
+                    os.makedirs(str(test_image_output_dir_path))
+                shutil.move(
+                    str(test_image_path),
+                    str(test_image_output_dir_path / test_image_path.name),
+                )
+
+        elif dataset_format in [
+            "SemanticSegmentation: EIseg(directory)",
+            "SemanticSegmentation: LabelMe(directory)",
+        ]:
+
+            image_path_list = []
+            json_path_list = []
+
+            # グレースケール画像の格納ディレクトリ作成
+            graycolor_image_dir = str(
+                split_txt_file_tmp_dir / "graycolor_image_dir"
+            )
+            os.makedirs(graycolor_image_dir, exist_ok=True)
+
+            # 存在チェック
+            if kqi_input_dir_path.exists() is False:
+                raise FileNotFoundError("ディレクトリが見つかりません：" + str(kqi_input_dir_path))
+            # ディレクトリチェック
+            if kqi_input_dir_path.is_dir() is False:
+                raise NotADirectoryError("ディレクトリではありません：" + str(kqi_input_dir_path))
+
+            # データセットから画像とjsonのパスリストをそれぞれ取得
+            for file_path in kqi_input_dir_path.glob("**/*"):
+                if file_path.suffix in IMAGE_SUFFIX:
+                    image_path_list.append(str(Path(file_path)))
+                elif file_path.suffix == ".json":
+                    json_path_list.append(str(Path(file_path)))
+
+            # 増幅データの保存先を作成（train用）
+            os.makedirs(
+                str(augmented_images_output_dir_path / "train"), exist_ok=True
+            )
+            # 増幅データの保存先を作成（valid用）
+            os.makedirs(
+                str(augmented_images_output_dir_path / "valid"), exist_ok=True
+            )
+
+            if dataset_format == "SemanticSegmentation: EIseg(directory)":
+
+                # クラスリスト生成
+                class_txt_path = preprocessing_tools.generate_classestxt_from_json(
+                    "SemanticSegmentation: EIseg(directory)",
+                    json_path_list,
+                    split_txt_file_tmp_dir,
+                )
+
+                # 上書きできるように作業ディレクトリにjsonファイルを保存
+                json_path = json_path_list[0]
+                shutil.copy(str(json_path), str(split_txt_file_tmp_dir))
+
+                # train用データの増幅処理
+                train_augmented_image_path_list = (
+                    _SemanticSegmentation_EIseg_dataset_augmentation(
                         flip_augmentation_probability,
                         train_image_path_list,
-                        json_path_list,
+                        str(split_txt_file_tmp_dir / "annotations.json"),
                         str(augmented_images_output_dir_path / "train"),
                     )
+                )
 
-                    # valid用データの増幅処理
-                    (
-                        valid_augmented_image_path_list,
-                        valid_augmented_json_path_list,
-                    ) = _SemanticSegmentation_LabelMe_dataset_augmentation(
+                # valid用データの増幅処理
+                valid_augmented_image_path_list = (
+                    _SemanticSegmentation_EIseg_dataset_augmentation(
                         flip_augmentation_probability,
                         valid_image_path_list,
-                        json_path_list,
+                        str(split_txt_file_tmp_dir / "annotations.json"),
                         str(augmented_images_output_dir_path / "valid"),
                     )
+                )
 
-                    if len(train_augmented_json_path_list) > 0:
-                        json_path_list = json_path_list + train_augmented_json_path_list
-                    if len(valid_augmented_json_path_list) > 0:
-                        json_path_list = json_path_list + valid_augmented_json_path_list
-
-                    # グレースケール画像生成
-                    graycolor_image_path_list = (
-                        preprocessing_tools.generate_graycolor_image_from_json(
-                            "SemanticSegmentation: LabelMe(directory)",
-                            json_path_list,
-                            class_txt_path,
-                            graycolor_image_dir,
-                        )
+                # グレースケール画像生成
+                graycolor_image_path_list = (
+                    preprocessing_tools.generate_graycolor_image_from_json(
+                        "SemanticSegmentation: EIseg(directory)",
+                        [str(split_txt_file_tmp_dir / "annotations.json")],
+                        class_txt_path,
+                        graycolor_image_dir,
                     )
+                )
 
-                else:
-                    raise Exception("設定パラメータdataset_formatの形式に誤りがあります。")
-
-                # 各画像ファイルパスリストに追加
-                if len(train_augmented_image_path_list) > 0:
-                    image_path_list = image_path_list + train_augmented_image_path_list
-                    train_image_path_list = (
-                        train_image_path_list + train_augmented_image_path_list
-                    )
-                if len(valid_augmented_image_path_list) > 0:
-                    image_path_list = image_path_list + valid_augmented_image_path_list
-                    valid_image_path_list = (
-                        valid_image_path_list + valid_augmented_image_path_list
-                    )
-                # mlflow.log_metric(
-                #     "学習(train)画像枚数",
-                #     len(train_image_path_list),
-                # )
-                # mlflow.log_metric(
-                #     "検証(valid)画像枚数",
-                #     len(valid_image_path_list),
-                # )
-
-                # 学習コンポーネントに渡すフォルダを作成
-                for d in [
-                    "data",
-                    "data/list",
-                    "data/list/cityscapes",
-                    "data/VOCDevkit",
-                    "data/VOCDevkit/JpegImages",
-                    "data/VOCDevkit/JpegImages/train",
-                    "data/VOCDevkit/JpegImages/valid",
-                    "data/VOCDevkit/JpegImages/test",
-                    "data/VOCDevkit/PngImages",
-                    "data/VOCDevkit/PngImages/train",
-                    "data/VOCDevkit/PngImages/valid",
-                    "data/VOCDevkit/PngImages/test",
-                ]:
-                    os.makedirs(str(preped_dataset_dir_path / d), exist_ok=True)
-
-                # classes.txtを格納
+                # annotations.json出力
                 shutil.copy(
-                    str(class_txt_path),
-                    str(preped_dataset_dir_path),
+                    str(split_txt_file_tmp_dir / "annotations.json"),
+                    str(augmented_images_output_dir_path),
                 )
 
-                # train画像とグレースケール画像を格納
-                train_lst_list = []
-                for train_image_path in train_image_path_list:
-                    shutil.copy(
-                        str(train_image_path),
-                        str(
-                            preped_dataset_dir_path / "data/VOCDevkit/JpegImages/train"
-                        ),
-                    )
-                    gray_train_image_path = Path(
+            elif dataset_format == "SemanticSegmentation: LabelMe(directory)":
+
+                # クラスリスト生成
+                class_txt_path = preprocessing_tools.generate_classestxt_from_json(
+                    "SemanticSegmentation: LabelMe(directory)",
+                    json_path_list,
+                    split_txt_file_tmp_dir,
+                )
+
+                # train用データの増幅処理
+                (
+                    train_augmented_image_path_list,
+                    train_augmented_json_path_list,
+                ) = _SemanticSegmentation_LabelMe_dataset_augmentation(
+                    flip_augmentation_probability,
+                    train_image_path_list,
+                    json_path_list,
+                    str(augmented_images_output_dir_path / "train"),
+                )
+
+                # valid用データの増幅処理
+                (
+                    valid_augmented_image_path_list,
+                    valid_augmented_json_path_list,
+                ) = _SemanticSegmentation_LabelMe_dataset_augmentation(
+                    flip_augmentation_probability,
+                    valid_image_path_list,
+                    json_path_list,
+                    str(augmented_images_output_dir_path / "valid"),
+                )
+
+                if len(train_augmented_json_path_list) > 0:
+                    json_path_list = json_path_list + train_augmented_json_path_list
+                if len(valid_augmented_json_path_list) > 0:
+                    json_path_list = json_path_list + valid_augmented_json_path_list
+
+                # グレースケール画像生成
+                graycolor_image_path_list = (
+                    preprocessing_tools.generate_graycolor_image_from_json(
+                        "SemanticSegmentation: LabelMe(directory)",
+                        json_path_list,
+                        class_txt_path,
                         graycolor_image_dir,
-                        Path(str(train_image_path).split("/")[-1]).stem + "_gray.png",
                     )
-                    if gray_train_image_path.exists():
-                        shutil.copy(
-                            str(gray_train_image_path),
-                            str(
-                                preped_dataset_dir_path
-                                / "data/VOCDevkit/PngImages/train"
-                            ),
-                        )
-                        image_path = str(
-                            "data/VOCDevkit/JpegImages/train"
-                            / Path(str(train_image_path).split("/")[-1])
-                        )
-                        grayimage_path = str(
-                            Path(
-                                "data/VOCDevkit/PngImages/train",
-                                Path(str(train_image_path).split("/")[-1]).stem
-                                + "_gray.png",
-                            )
-                        )
-                        train_lst_list.append(
-                            str(image_path) + "\t" + str(grayimage_path) + "\n"
-                        )
-                    else:
-                        raise Exception("グレースケール画像が作成されていません")
-
-                # valid画像とグレースケール画像を格納
-                valid_lst_list = []
-                for valid_image_path in valid_image_path_list:
-                    shutil.copy(
-                        str(valid_image_path),
-                        str(
-                            preped_dataset_dir_path / "data/VOCDevkit/JpegImages/valid"
-                        ),
-                    )
-                    gray_valid_image_path = Path(
-                        graycolor_image_dir,
-                        Path(str(valid_image_path).split("/")[-1]).stem + "_gray.png",
-                    )
-                    if gray_valid_image_path.exists():
-                        shutil.copy(
-                            str(gray_valid_image_path),
-                            str(
-                                preped_dataset_dir_path
-                                / "data/VOCDevkit/PngImages/valid"
-                            ),
-                        )
-                        image_path = str(
-                            "data/VOCDevkit/JpegImages/valid"
-                            / Path(str(valid_image_path).split("/")[-1])
-                        )
-                        grayimage_path = str(
-                            Path(
-                                "data/VOCDevkit/PngImages/valid",
-                                Path(str(valid_image_path).split("/")[-1]).stem
-                                + "_gray.png",
-                            )
-                        )
-                        valid_lst_list.append(
-                            str(image_path) + "\t" + str(grayimage_path) + "\n"
-                        )
-                    else:
-                        raise Exception("グレースケール画像が作成されていません")
-
-                # test画像とグレースケール画像を格納
-                test_lst_list = []
-                for test_image_path in test_image_path_list:
-                    shutil.copy(
-                        str(test_image_path),
-                        str(preped_dataset_dir_path / "data/VOCDevkit/JpegImages/test"),
-                    )
-                    gray_test_image_path = Path(
-                        graycolor_image_dir,
-                        Path(str(test_image_path).split("/")[-1]).stem + "_gray.png",
-                    )
-                    if gray_test_image_path.exists():
-                        shutil.copy(
-                            str(gray_test_image_path),
-                            str(
-                                preped_dataset_dir_path
-                                / "data/VOCDevkit/PngImages/test"
-                            ),
-                        )
-                        image_path = str(
-                            "data/VOCDevkit/JpegImages/test"
-                            / Path(str(test_image_path).split("/")[-1])
-                        )
-                        grayimage_path = str(
-                            Path(
-                                "data/VOCDevkit/PngImages/test",
-                                Path(str(test_image_path).split("/")[-1]).stem
-                                + "_gray.png",
-                            )
-                        )
-                        test_lst_list.append(
-                            str(image_path) + "\t" + str(grayimage_path) + "\n"
-                        )
-                    else:
-                        raise Exception("グレースケール画像が作成されていません")
-
-                # lstファイル名定義
-                trainlst_file_path = pathlib.Path(
-                    preped_dataset_dir_path, "data/list/cityscapes", "train.lst"
                 )
-                testlst_file_path = pathlib.Path(
-                    preped_dataset_dir_path, "data/list/cityscapes", "test.lst"
-                )
-                validationlst_file_path = pathlib.Path(
-                    preped_dataset_dir_path, "data/list/cityscapes", "valid.lst"
-                )
-
-                # 書き込む内容が存在する場合は、lstファイル出力
-                if not len(train_lst_list) == 0:
-                    with open(
-                        trainlst_file_path, "w", encoding="utf-8", newline="\n"
-                    ) as f:
-                        f.writelines(train_lst_list)
-                if not len(test_lst_list) == 0:
-                    with open(
-                        testlst_file_path, "w", encoding="utf-8", newline="\n"
-                    ) as f:
-                        f.writelines(test_lst_list)
-                if not len(valid_lst_list) == 0:
-                    with open(
-                        validationlst_file_path, "w", encoding="utf-8", newline="\n"
-                    ) as f:
-                        f.writelines(valid_lst_list)
 
             else:
-                raise Exception("dataset_format is unexpected format")
+                raise Exception("設定パラメータdataset_formatの形式に誤りがあります。")
 
-            # 成果物の出力
-            # log_artifactsの第一引数で指定したフォルダ直下がGUI上のジョブ結果に表示される
-            # mlflow.log_metric("評価(test)画像枚数", num_test_image)
-            # mlflow.log_artifacts(str(kqi_output_dir_path))
+            # 各画像ファイルパスリストに追加
+            if len(train_augmented_image_path_list) > 0:
+                image_path_list = image_path_list + train_augmented_image_path_list
+                train_image_path_list = (
+                    train_image_path_list + train_augmented_image_path_list
+                )
+            if len(valid_augmented_image_path_list) > 0:
+                image_path_list = image_path_list + valid_augmented_image_path_list
+                valid_image_path_list = (
+                    valid_image_path_list + valid_augmented_image_path_list
+                )
+            # mlflow.log_metric(
+            #     "学習(train)画像枚数",
+            #     len(train_image_path_list),
+            # )
+            # mlflow.log_metric(
+            #     "検証(valid)画像枚数",
+            #     len(valid_image_path_list),
+            # )
 
-        except Exception as e:
-            logger.exception("data prep error: {}".format(e))
-            # mlflow.log_artifacts(str(kqi_output_dir_path))
-            # mlflow.log_artifacts(str(preped_dataset_dir_path))
-            sys.exit(1)
+            # 学習コンポーネントに渡すフォルダを作成
+            for d in [
+                "data",
+                "data/list",
+                "data/list/cityscapes",
+                "data/VOCDevkit",
+                "data/VOCDevkit/JpegImages",
+                "data/VOCDevkit/JpegImages/train",
+                "data/VOCDevkit/JpegImages/valid",
+                "data/VOCDevkit/JpegImages/test",
+                "data/VOCDevkit/PngImages",
+                "data/VOCDevkit/PngImages/train",
+                "data/VOCDevkit/PngImages/valid",
+                "data/VOCDevkit/PngImages/test",
+            ]:
+                os.makedirs(str(preped_dataset_dir_path / d), exist_ok=True)
+
+            # classes.txtを格納
+            shutil.copy(
+                str(class_txt_path),
+                str(preped_dataset_dir_path),
+            )
+
+            # train画像とグレースケール画像を格納
+            train_lst_list = []
+            for train_image_path in train_image_path_list:
+                shutil.copy(
+                    str(train_image_path),
+                    str(
+                        preped_dataset_dir_path / "data/VOCDevkit/JpegImages/train"
+                    ),
+                )
+                gray_train_image_path = Path(
+                    graycolor_image_dir,
+                    Path(str(train_image_path).split("/")[-1]).stem + "_gray.png",
+                )
+                if gray_train_image_path.exists():
+                    shutil.copy(
+                        str(gray_train_image_path),
+                        str(
+                            preped_dataset_dir_path
+                            / "data/VOCDevkit/PngImages/train"
+                        ),
+                    )
+                    image_path = str(
+                        "data/VOCDevkit/JpegImages/train"
+                        / Path(str(train_image_path).split("/")[-1])
+                    )
+                    grayimage_path = str(
+                        Path(
+                            "data/VOCDevkit/PngImages/train",
+                            Path(str(train_image_path).split("/")[-1]).stem
+                            + "_gray.png",
+                        )
+                    )
+                    train_lst_list.append(
+                        str(image_path) + "\t" + str(grayimage_path) + "\n"
+                    )
+                else:
+                    raise Exception("グレースケール画像が作成されていません")
+
+            # valid画像とグレースケール画像を格納
+            valid_lst_list = []
+            for valid_image_path in valid_image_path_list:
+                shutil.copy(
+                    str(valid_image_path),
+                    str(
+                        preped_dataset_dir_path / "data/VOCDevkit/JpegImages/valid"
+                    ),
+                )
+                gray_valid_image_path = Path(
+                    graycolor_image_dir,
+                    Path(str(valid_image_path).split("/")[-1]).stem + "_gray.png",
+                )
+                if gray_valid_image_path.exists():
+                    shutil.copy(
+                        str(gray_valid_image_path),
+                        str(
+                            preped_dataset_dir_path
+                            / "data/VOCDevkit/PngImages/valid"
+                        ),
+                    )
+                    image_path = str(
+                        "data/VOCDevkit/JpegImages/valid"
+                        / Path(str(valid_image_path).split("/")[-1])
+                    )
+                    grayimage_path = str(
+                        Path(
+                            "data/VOCDevkit/PngImages/valid",
+                            Path(str(valid_image_path).split("/")[-1]).stem
+                            + "_gray.png",
+                        )
+                    )
+                    valid_lst_list.append(
+                        str(image_path) + "\t" + str(grayimage_path) + "\n"
+                    )
+                else:
+                    raise Exception("グレースケール画像が作成されていません")
+
+            # test画像とグレースケール画像を格納
+            test_lst_list = []
+            for test_image_path in test_image_path_list:
+                shutil.copy(
+                    str(test_image_path),
+                    str(preped_dataset_dir_path / "data/VOCDevkit/JpegImages/test"),
+                )
+                gray_test_image_path = Path(
+                    graycolor_image_dir,
+                    Path(str(test_image_path).split("/")[-1]).stem + "_gray.png",
+                )
+                if gray_test_image_path.exists():
+                    shutil.copy(
+                        str(gray_test_image_path),
+                        str(
+                            preped_dataset_dir_path
+                            / "data/VOCDevkit/PngImages/test"
+                        ),
+                    )
+                    image_path = str(
+                        "data/VOCDevkit/JpegImages/test"
+                        / Path(str(test_image_path).split("/")[-1])
+                    )
+                    grayimage_path = str(
+                        Path(
+                            "data/VOCDevkit/PngImages/test",
+                            Path(str(test_image_path).split("/")[-1]).stem
+                            + "_gray.png",
+                        )
+                    )
+                    test_lst_list.append(
+                        str(image_path) + "\t" + str(grayimage_path) + "\n"
+                    )
+                else:
+                    raise Exception("グレースケール画像が作成されていません")
+
+            # lstファイル名定義
+            trainlst_file_path = pathlib.Path(
+                preped_dataset_dir_path, "data/list/cityscapes", "train.lst"
+            )
+            testlst_file_path = pathlib.Path(
+                preped_dataset_dir_path, "data/list/cityscapes", "test.lst"
+            )
+            validationlst_file_path = pathlib.Path(
+                preped_dataset_dir_path, "data/list/cityscapes", "valid.lst"
+            )
+
+            # 書き込む内容が存在する場合は、lstファイル出力
+            if not len(train_lst_list) == 0:
+                with open(
+                    trainlst_file_path, "w", encoding="utf-8", newline="\n"
+                ) as f:
+                    f.writelines(train_lst_list)
+            if not len(test_lst_list) == 0:
+                with open(
+                    testlst_file_path, "w", encoding="utf-8", newline="\n"
+                ) as f:
+                    f.writelines(test_lst_list)
+            if not len(valid_lst_list) == 0:
+                with open(
+                    validationlst_file_path, "w", encoding="utf-8", newline="\n"
+                ) as f:
+                    f.writelines(valid_lst_list)
+
+        else:
+            raise Exception("dataset_format is unexpected format")
+
+    except Exception as e:
+        logger.exception("data prep error: {}".format(e))
+        raise
