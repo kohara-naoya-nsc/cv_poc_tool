@@ -404,7 +404,7 @@ def image_classification():
     if st.session_state.zip_data and st.session_state.zip_filename and st.session_state.view and st.session_state.run_id:
         run_id=st.session_state.run_id
         st.download_button(
-                        label="画像分類の推論結果をダウンロード",
+                        label="画像分類の学習結果をダウンロード",
                         data=st.session_state.zip_data,
                         file_name=st.session_state.zip_filename,
                         mime='application/zip',

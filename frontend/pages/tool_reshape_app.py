@@ -149,7 +149,7 @@ def tool_reshape_app():
             output_height = st.number_input("出力画像の高さを入力してください", value=200)
     
             # 射影変換を開始するボタン
-            if st.button("射影変換を開始"):
+            if st.button("Start"):
                 if len(st.session_state["points"]) == 4:
                     pers_img = perspective_transform(org_img, st.session_state["points"], output_size=(output_width, output_height))
     

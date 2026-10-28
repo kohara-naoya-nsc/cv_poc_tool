@@ -162,7 +162,7 @@ def patchcore():
         repo="models"
         n_neighbors = st.slider("n_neighbors:検索窓の大きさ", min_value=0, max_value=100, value=3, key="n_neighbors")
         sampling_ratio = st.slider("sampling_ratio:サンプリング率", min_value=0.00, max_value=1.00, value=0.01, key="sampling_ratio")
-        coef_sigma = st.slider("coef_sigma:閾値計算時のシグマ係数", min_value=0.0, max_value=20.0, value=5.0, key="coef_sigma")
+        coef_sigma = st.slider("coef_sigma:しきい値計算時のシグマ係数", min_value=0.0, max_value=20.0, value=5.0, key="coef_sigma")
         contour_toggle = st.toggle("contour:等高線マップの可視化(OFFでヒートマップで出力)", False, key="contour_toggle")
         if contour_toggle :
             contour = st.slider("contour:等高線マップの可視化", min_value=0.0, max_value=50.0, value=None, key="contour")
@@ -295,7 +295,7 @@ def patchcore():
     if st.session_state.zip_data and st.session_state.zip_filename and st.session_state.view and st.session_state.run_id:
         run_id=st.session_state.run_id
         st.download_button(
-                        label="画像分類の推論結果をダウンロード",
+                        label="異常検知の学習結果をダウンロード",
                         data=st.session_state.zip_data,
                         file_name=st.session_state.zip_filename,
                         mime='application/zip',

@@ -120,7 +120,7 @@ app = MultiApp()
 app.add_app("ホームページ", home_page, "ホーム")
 app.add_app("射影変換(画角補正)", tool_reshape_app, "前処理")
 app.add_app("動画→画像変換", tool_capture_app, "前処理")
-app.add_app("データ変換", tool_gzo_fw, "前処理")
+app.add_app("データセット変換", tool_gzo_fw, "前処理")
 
 app.add_app("学習", image_classification, "画像分類", "YOLOv8")
 app.add_app("推論", image_classification_prediction, "画像分類", "YOLOv8")
@@ -135,8 +135,8 @@ app.add_app("推論", object_prediction_yolox, "物体検出", "YOLOX")
 app.add_app("学習", patchcore, "異常検知", "Wide-ResNet-50-2")
 app.add_app("推論", patchcore_prediction, "異常検知", "Wide-ResNet-50-2")
 
-app.add_app("学習", semantic_segmentation, "領域検知", "HRNet")
-app.add_app("推論", segmentation_prediction, "領域検知", "HRNet")
+app.add_app("学習", semantic_segmentation, "領域検出", "HRNet")
+app.add_app("推論", segmentation_prediction, "領域検出", "HRNet")
 
 app.add_app("推論", paddleocr_pre, "文字認識")
 

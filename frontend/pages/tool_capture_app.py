@@ -114,7 +114,7 @@ def tool_capture_app():
             num_frames = None
 
         
-        if st.button("処理開始"):
+        if st.button("Start"):
             with st.spinner("動画から画像データを抽出しています..."):
                 zip_filename = process_video(uploaded_file, method, num_frames, interval)
             

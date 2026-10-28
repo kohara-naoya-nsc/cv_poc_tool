@@ -125,8 +125,8 @@ def object_prediction_yolox():
     with st.expander("高度なオプション"):
         st.slider("nms:NMSのloUしきい値", value=0.3, min_value=0.0, max_value=1.0, key="nms")
         st.toggle("is_evaluate:検出したBOXでトリミングした画像を出力するか", value=True, key="is_evaluate")
-        st.slider("evaluation_score_thresh:精度評価スコアの閾値", value=0.8, min_value=0.0, max_value=1.0, key="evaluation_score_thresh")
-        st.slider("evaluation_iou_thresh:IoUの閾値", value=0.5, min_value=0.0, max_value=1.0, key="evaluation_iou_thresh")
+        st.slider("evaluation_score_thresh:精度評価スコアのしきい値", value=0.8, min_value=0.0, max_value=1.0, key="evaluation_score_thresh")
+        st.slider("evaluation_iou_thresh:IoUのしきい値", value=0.5, min_value=0.0, max_value=1.0, key="evaluation_iou_thresh")
         st.number_input("camid:WebカメラのID", value=0, key="camid")
         st.toggle("fp16:FP16で推論を行うかどうか", value=False, key="fp16")
         st.toggle("legacy:旧YOLOXで学習したモデルを使用している場合は有効化", value=False, key="legacy")

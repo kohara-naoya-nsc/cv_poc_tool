@@ -115,7 +115,7 @@ def object_detection_yolox():
         model_name = st.selectbox("デフォルトのモデルを選択してください", model_name_options, index=0, key="model_name")
 
         # 再学習するモデルをアップロード
-        st.markdown("##### モデルをアップロードしていください.pth")
+        st.markdown("##### モデルをアップロードしてください.pth")
         multi_dml = '''*注：日本語を含むファイルはアップロードしないでください。
         *対応する形式：.pth
         '''
@@ -367,7 +367,7 @@ def object_detection_yolox():
                 output_zip = shutil.make_archive(output_pth, format='zip', root_dir=str(output_pth))
                 with open(output_zip, "rb") as f:
                     st.download_button(
-                        label="学習結果のダウンロード",
+                        label="学習結果をダウンロード",
                         data=f.read(),
                         file_name=f"{model_name}_学習結果.zip",
                         mime="application/zip",

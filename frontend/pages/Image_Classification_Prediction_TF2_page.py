@@ -66,8 +66,8 @@ def image_classification_prediction_tf2():
     with st.expander("オプション"):
         st.slider("image_width：画像の幅", min_value=32, max_value=1024, value=480, key="image_width")
         st.slider("image_height：画像の高さ", min_value=32, max_value=1024, value=480, key="image_height")
-        st.number_input("evaluation_score_thresh：評価スコア閾値", min_value=0.0, max_value=1.0, value=0.95, key="evaluation_score_thresh")
-        st.number_input("evaluation_np_thresh：評価NP閾値", min_value=0.0, max_value=1.0, value=0.8, key="evaluation_np_thresh")
+        st.number_input("evaluation_score_thresh：評価スコアしきい値", min_value=0.0, max_value=1.0, value=0.95, key="evaluation_score_thresh")
+        st.number_input("evaluation_np_thresh：評価NPしきい値", min_value=0.0, max_value=1.0, value=0.8, key="evaluation_np_thresh")
         st.number_input("learning_rate：学習率", min_value=1e-7, max_value=1e-1, value=1e-5, key="learning_rate")
         st.checkbox("is_evaluate：評価を行うか", value=True, key="is_evaluate")
 
@@ -173,7 +173,7 @@ def image_classification_prediction_tf2():
                 output_zip = shutil.make_archive(output_pth, format='zip', root_dir=str(output_pth))
                 with open(output_zip, "rb") as f:
                     st.download_button(
-                        label="推論結果のダウンロード",
+                        label="推論結果をダウンロード",
                         data=f.read(),
                         file_name=f"{uuid_num}_vgg16_weights_tf_dim_ordering_tf_kernels_notop_推論結果.zip",
                         mime="application/zip",
