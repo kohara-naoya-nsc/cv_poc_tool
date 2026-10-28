@@ -956,7 +956,6 @@ def _SemanticSegmentation_mltable_dataset_augmentation(
 
 def data_prep(
     dataset_directory: str,
-    # mltable_dataset: str,
     dataset_format: str,
     prep_mode: str,
     train_data_ratio: float,
@@ -972,7 +971,6 @@ def data_prep(
     rotate_augmentation_degree: float,
     preped_dataset_directory: str,
 ) -> None:
-    # with mlflow.start_run() as mlflow_run:
     try:
         # KQIディレクトリ構造の追加
         os.makedirs(KQI_INPUT_DIR_PATH, exist_ok=True)
@@ -982,7 +980,6 @@ def data_prep(
 
         # ロガー取得
         logger = logging_tools.set_logger(KQI_OUTPUT_DIR_PATH)
-        # logger.info("start job: \n{}".format(str(mlflow_run.info)))
 
         # コンポーネント出力ディレクトリの取得
         preped_dataset_dir_path = Path(preped_dataset_directory)
@@ -1028,7 +1025,6 @@ def data_prep(
         num_test_image = 0
         split_txt_file_tmp_dir = Path(os.getcwd())
 
-        # 振り分けモード（directory）
         if is_split:
             logger.info("split_augment mode")
 
@@ -1120,19 +1116,27 @@ def data_prep(
             "rotate": rotate_augmentation_probability,
         }
 
+
+        ###################################
+        # Detection: YOLO(directory)の場合
+        ###################################
         if dataset_format == "Detection: YOLO(directory)":
             logger.info("dataset format: YOLO")
             # ディレクトリ構造の作成
             (preped_dataset_dir_path / "data").mkdir(parents=True, exist_ok=True)
             (preped_dataset_dir_path / "text").mkdir(parents=True, exist_ok=True)
 
+            #################
             # クラスリスト抽出
+            #################
+            # classes.txtの存在確認
             yolo_classes_txt_path = None
             for file_path in kqi_input_dir_path.glob("**/*"):
                 if file_path.is_file() and file_path.name == "classes.txt":
                     yolo_classes_txt_path = file_path
                     break
 
+            # クラスリスト抽出
             if yolo_classes_txt_path is None:
                 raise Exception("not found classes.txt")
             yolo_class_list = _get_list_from_txt(yolo_classes_txt_path)
@@ -1142,7 +1146,10 @@ def data_prep(
             )
             logger.info("get class list: {}".format(str(yolo_class_list)))
 
+
+            #################
             # 画像増幅
+            #################
             is_voc = False
             if len(train_image_path_list) > 0:
                 logger.info(
@@ -1150,6 +1157,8 @@ def data_prep(
                         str(len(train_image_path_list))
                     )
                 )
+
+                # YOLOデータセットの画像増幅を実行
                 (
                     augmented_train_image_path_list,
                     is_voc,
@@ -1160,11 +1169,8 @@ def data_prep(
                     str(preped_dataset_dir_path / "data"),
                     yolo_class_list,
                 )
-                # mlflow.log_metric(
-                #     "学習(train)画像枚数",
-                #     len(train_image_path_list)
-                #     + len(augmented_train_image_path_list),
-                # )
+
+                # 増幅後の画像を出力ディレクトリにコピー
                 for augmented_train_image_path in augmented_train_image_path_list:
                     shutil.copy(
                         str(augmented_train_image_path),
@@ -1175,12 +1181,17 @@ def data_prep(
                         ),
                     )
 
+            #################
+            # 検証画像の増幅
+            #################
             if len(valid_image_path_list) > 0:
                 logger.info(
                     "valid image augmentation. original {} images".format(
                         str(len(valid_image_path_list))
                     )
                 )
+
+                # YOLOデータセットの検証画像増幅を実行
                 (
                     augmented_valid_image_path_list,
                     is_voc,
@@ -1191,11 +1202,8 @@ def data_prep(
                     str(preped_dataset_dir_path / "data"),
                     yolo_class_list,
                 )
-                # mlflow.log_metric(
-                #     "検証(valid)画像枚数",
-                #     len(valid_image_path_list)
-                #     + len(augmented_valid_image_path_list),
-                # )
+
+                # 増幅後の画像を出力ディレクトリにコピー
                 for augmented_valid_image_path in augmented_valid_image_path_list:
                     shutil.copy(
                         str(augmented_valid_image_path),
@@ -1206,50 +1214,64 @@ def data_prep(
                         ),
                     )
 
+            ##################################
             # 元画像・アノテーションファイルの移動
+            ##################################
             annotation_suffix = ".xml" if is_voc else ".txt"
+
+            # 学習画像の移動
             for train_image_path in train_image_path_list:
                 shutil.move(
                     str(train_image_path),
                     str(preped_dataset_dir_path / "data" / train_image_path.name),
                 )
+                train_path = (
+                    train_image_path.parent.parent
+                    / "labels"
+                    / (train_image_path.stem + annotation_suffix)
+                )
                 shutil.move(
-                    str(
-                        train_image_path.parent
-                        / (train_image_path.stem + annotation_suffix)
-                    ),
+                    str(train_path),
                     str(
                         preped_dataset_dir_path
                         / "data"
                         / (train_image_path.stem + annotation_suffix)
                     ),
                 )
+
+            # 検証画像の移動
             for valid_image_path in valid_image_path_list:
                 shutil.move(
                     str(valid_image_path),
                     str(preped_dataset_dir_path / "data" / valid_image_path.name),
                 )
+                valid_path = (
+                    valid_image_path.parent.parent
+                    / "labels"
+                    / (valid_image_path.stem + annotation_suffix)
+                )
                 shutil.move(
-                    str(
-                        valid_image_path.parent
-                        / (valid_image_path.stem + annotation_suffix)
-                    ),
+                    str(valid_path),
                     str(
                         preped_dataset_dir_path
                         / "data"
                         / (valid_image_path.stem + annotation_suffix)
                     ),
                 )
+
+            # テスト画像の移動
             for test_image_path in test_image_path_list:
                 shutil.move(
                     str(test_image_path),
                     str(preped_dataset_dir_path / "data" / test_image_path.name),
                 )
+                test_path = (
+                    test_image_path.parent.parent
+                    / "labels"
+                    / (test_image_path.stem + annotation_suffix)
+                )
                 shutil.move(
-                    str(
-                        test_image_path.parent
-                        / (test_image_path.stem + annotation_suffix)
-                    ),
+                    str(test_path),
                     str(
                         preped_dataset_dir_path
                         / "data"
@@ -1854,13 +1876,6 @@ def data_prep(
         else:
             raise Exception("dataset_format is unexpected format")
 
-        # 成果物の出力
-        # log_artifactsの第一引数で指定したフォルダ直下がGUI上のジョブ結果に表示される
-        # mlflow.log_metric("評価(test)画像枚数", num_test_image)
-        # mlflow.log_artifacts(str(kqi_output_dir_path))
-
     except Exception as e:
         logger.exception("data prep error: {}".format(e))
-        # mlflow.log_artifacts(str(kqi_output_dir_path))
-        # mlflow.log_artifacts(str(preped_dataset_dir_path))
         raise
