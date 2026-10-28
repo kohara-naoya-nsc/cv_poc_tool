@@ -118,7 +118,6 @@ class MultiApp:
         # 選択されたページを実行
         for app in self.apps:
             if app["id"] == st.session_state.current_page:
-            if app["id"] == st.session_state.current_page:
                 app["function"]()
                 break
 
