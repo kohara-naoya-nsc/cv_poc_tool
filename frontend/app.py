@@ -103,17 +103,10 @@ class MultiApp:
 
         st.sidebar.markdown("---")
         st.sidebar.markdown(
-            '<a href="http://0.0.0.0:8080" target="_blank" style="color: blue; text-decoration: underline;">【領域検出】推論</a>',
+            '<a href="http://localhost:8080" target="_blank" style="color: blue; text-decoration: underline;">アノテーション（Label Studio）</a>',
             unsafe_allow_html=True
         )
-        st.sidebar.markdown(
-            '<a href="http://0.0.0.0:8080" target="_blank" style="color: blue; text-decoration: underline;">【データセット作成】画像分類</a>',
-            unsafe_allow_html=True
-        )
-        st.sidebar.markdown(
-            '<a href="http://0.0.0.0:8080" target="_blank" style="color: blue; text-decoration: underline;">【データセット作成】物体検出</a>',
-            unsafe_allow_html=True
-        )
+        st.sidebar.caption("*従来のデータセット作成")
 
         # 選択されたページを実行
         for app in self.apps:
