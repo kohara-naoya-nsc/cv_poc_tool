@@ -59,7 +59,7 @@ def tool_gzo_fw():
         "Detection: YOLO(directory)",
         "Detection: VOC(directory)",
         "Classification: folder-tree(directory)",
-        "SemanticSegmentation: Elseg(directory)",
+        "SemanticSegmentation: EIseg(directory)",
         "SemanticSegmentation: LabelMe(directory)"
         ]
     dataset_format = st.selectbox(
