@@ -27,3 +27,4 @@ backend/yolo/yolov8s.pt
 frontend/test.txt
 frontend/train.txt
 frontend/valid.txt
+graycolor_image_dir/
