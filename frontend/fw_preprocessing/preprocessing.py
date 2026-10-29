@@ -84,17 +84,24 @@ def _yolo_dataset_augmentation(
         # ファイルが存在しなければ処理しない
         is_voc = False
         if yolo_image_file.exists():
-            if yolo_image_file.with_suffix(".txt").exists():
+            yolo_annotation_file = yolo_image_file.with_suffix(".txt")
+            if yolo_annotation_file.exists():
                 pass
             elif yolo_image_file.with_suffix(".xml").exists():
                 is_voc = True
                 preprocessing_tools.convert_annotation_pascalvoc2007_to_yolo(
                     yolo_image_file.with_suffix(".xml"),
                     classes_list,
-                    yolo_image_file.with_suffix(".txt"),
+                    yolo_annotation_file,
                 )
             else:
-                continue
+                yolo_annotation_file = (
+                    yolo_image_file.parent.parent
+                    / "labels"
+                    / (yolo_image_file.stem + ".txt")
+                )
+                if not yolo_annotation_file.exists():
+                    continue
         else:
             continue
 
@@ -102,7 +109,6 @@ def _yolo_dataset_augmentation(
         image_height, image_width, _ = augmented_image.shape[:3]
 
         # アノテーションファイル(YOLO形式)をオープン
-        yolo_annotation_file = yolo_image_file.with_suffix(".txt")
         with open(yolo_annotation_file, encoding="utf-8") as f2:
 
             yolo_lines = f2.readlines()
@@ -582,7 +588,7 @@ def _voc_dataset_augmentation(
         # 読み込みアノテーションファイル名を取得
         parent_dir_path = str(image_file_path.parent)
         annotation_file_path = Path(
-            parent_dir_path.replace("JPEGImages", "Annotations"),
+            parent_dir_path.replace("images", "Annotations"),
             image_file_no_suffix + ".xml",
         )
         if not annotation_file_path.exists():
@@ -1308,10 +1314,17 @@ def data_prep(
                     str(test_image_list_txt_path), "w", encoding="utf-8"
                 ) as f:
                     f.writelines([p.name + "\n" for p in test_image_path_list])
-
+        
+        
+        ###############################################
+        # CDetection: VOC(directory) の場合
+        ###############################################
         elif dataset_format == "Detection: VOC(directory)":
             logger.info("dataset format: VOC")
 
+            #######################
+            # VOCディレクトリ構造作成
+            #######################
             for d in [
                 "VOC2007",
                 "VOC2007/Annotations",
@@ -1320,12 +1333,18 @@ def data_prep(
             ]:
                 os.makedirs(str(preped_dataset_dir_path / d), exist_ok=True)
 
+
+            ##########################
+            # 学習画像の水増し
+            ##########################
             if len(train_image_path_list) > 0:
                 logger.info(
                     "train image augmentation. original {} images".format(
                         str(len(train_image_path_list))
                     )
                 )
+
+                # 学習画像の水増し
                 augmented_train_image_path_list = _voc_dataset_augmentation(
                     is_augmentation,
                     augmentation_setting,
@@ -1333,11 +1352,8 @@ def data_prep(
                     str(preped_dataset_dir_path / "VOC2007"),
                     "",
                 )
-                # mlflow.log_metric(
-                #     "学習(train)画像枚数",
-                #     len(train_image_path_list)
-                #     + len(augmented_train_image_path_list),
-                # )
+
+                # 水増し後の学習画像をコピー
                 for augmented_train_image_path in augmented_train_image_path_list:
                     shutil.copy(
                         str(augmented_train_image_path),
@@ -1360,11 +1376,6 @@ def data_prep(
                     str(preped_dataset_dir_path / "VOC2007"),
                     "",
                 )
-                # mlflow.log_metric(
-                #     "検証(valid)画像枚数",
-                #     len(valid_image_path_list)
-                #     + len(augmented_valid_image_path_list),
-                # )
                 for augmented_valid_image_path in augmented_valid_image_path_list:
                     shutil.copy(
                         str(augmented_valid_image_path),
@@ -1394,7 +1405,7 @@ def data_prep(
                         str(
                             Path(
                                 str(image_path.parent).replace(
-                                    "JPEGImages", "Annotations"
+                                    "images", "Annotations"
                                 ),
                                 image_path.stem + ".xml",
                             )
@@ -1592,6 +1603,10 @@ def data_prep(
                 str(augmented_images_output_dir_path / "valid"), exist_ok=True
             )
 
+
+            ###############################################
+            # SemanticSegmentation: EIseg(directory) の場合
+            ###############################################
             if dataset_format == "SemanticSegmentation: EIseg(directory)":
 
                 # クラスリスト生成
@@ -1603,14 +1618,15 @@ def data_prep(
 
                 # 上書きできるように作業ディレクトリにjsonファイルを保存
                 json_path = json_path_list[0]
-                shutil.copy(str(json_path), str(split_txt_file_tmp_dir))
+                annotation_json_path = split_txt_file_tmp_dir / "annotations.json"
+                shutil.copy(str(json_path), str(annotation_json_path))
 
                 # train用データの増幅処理
                 train_augmented_image_path_list = (
                     _SemanticSegmentation_EIseg_dataset_augmentation(
                         flip_augmentation_probability,
                         train_image_path_list,
-                        str(split_txt_file_tmp_dir / "annotations.json"),
+                        str(annotation_json_path),
                         str(augmented_images_output_dir_path / "train"),
                     )
                 )
@@ -1620,7 +1636,7 @@ def data_prep(
                     _SemanticSegmentation_EIseg_dataset_augmentation(
                         flip_augmentation_probability,
                         valid_image_path_list,
-                        str(split_txt_file_tmp_dir / "annotations.json"),
+                        str(annotation_json_path),
                         str(augmented_images_output_dir_path / "valid"),
                     )
                 )
@@ -1629,7 +1645,7 @@ def data_prep(
                 graycolor_image_path_list = (
                     preprocessing_tools.generate_graycolor_image_from_json(
                         "SemanticSegmentation: EIseg(directory)",
-                        [str(split_txt_file_tmp_dir / "annotations.json")],
+                        [str(annotation_json_path)],
                         class_txt_path,
                         graycolor_image_dir,
                     )
@@ -1637,7 +1653,7 @@ def data_prep(
 
                 # annotations.json出力
                 shutil.copy(
-                    str(split_txt_file_tmp_dir / "annotations.json"),
+                    str(annotation_json_path),
                     str(augmented_images_output_dir_path),
                 )
 
