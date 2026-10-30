@@ -28,3 +28,5 @@ frontend/test.txt
 frontend/train.txt
 frontend/valid.txt
 graycolor_image_dir/
+frontend/annotations.json
+frontend/classes.txt
