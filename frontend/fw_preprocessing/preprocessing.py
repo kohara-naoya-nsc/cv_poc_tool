@@ -263,7 +263,7 @@ def _SemanticSegmentation_EIseg_dataset_augmentation(
             max_image_id = max(dct["id"] for dct in annotation_dict["images"])
             # EIseg_Jsonファイルのimagesから増幅対象の画像を検索
             for image_dict in annotation_dict["images"]:
-                if str(image_dict["file_name"]) == str(imagefile_name):
+                if Path(image_dict["file_name"]).name == imagefile_name:
                     max_image_id = max_image_id + 1
                     annotation_in_image = []
 
@@ -323,10 +323,10 @@ def _SemanticSegmentation_EIseg_dataset_augmentation(
                         "width": image_dict["width"],
                         "height": image_dict["height"],
                         "file_name": str(augmented_file_name).split("/")[-1],
-                        "license": image_dict["license"],
-                        "flickr_url": image_dict["flickr_url"],
-                        "coco_url": image_dict["coco_url"],
-                        "date_captured": image_dict["date_captured"],
+                        "license": image_dict.get("license"),
+                        "flickr_url": image_dict.get("flickr_url"),
+                        "coco_url": image_dict.get("coco_url"),
+                        "date_captured": image_dict.get("date_captured"),
                     }
                     annotation_dict["images"].append(annotation_image)
                     with open(json_path, "w") as f:
@@ -1717,14 +1717,6 @@ def data_prep(
                 valid_image_path_list = (
                     valid_image_path_list + valid_augmented_image_path_list
                 )
-            # mlflow.log_metric(
-            #     "学習(train)画像枚数",
-            #     len(train_image_path_list),
-            # )
-            # mlflow.log_metric(
-            #     "検証(valid)画像枚数",
-            #     len(valid_image_path_list),
-            # )
 
             # 学習コンポーネントに渡すフォルダを作成
             for d in [
